@@ -52,18 +52,11 @@ export default function TabLayout() {
       <Tabs.Screen
         name="record"
         options={{
-          title: '',
+          title: 'Record',
           tabBarIcon: ({ focused }) => (
             <AudioLinesIcon
               size={40}
               color="#FF6B00"
-              style={{
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.25,
-                shadowRadius: 3.84,
-                elevation: 5,
-              }}
             />
           ),
         }}

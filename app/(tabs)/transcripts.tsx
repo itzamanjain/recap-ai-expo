@@ -1,129 +1,196 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, TouchableOpacity, ScrollView, TextInput, Modal, useColorScheme } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, TouchableOpacity, ScrollView, TextInput, Modal, useColorScheme, RefreshControl } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/hooks/ThemeContext';
+import { Meeting } from '@/app/types/navigation';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRoute, useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 
-interface Transcript {
-  id: number;
-  title: string;
-  timestamp: string;
-  duration: string;
-  summary: string;
-  fullContent: string;
-}
+const MEETINGS_STORAGE_KEY = '@recap_ai_meetings';
 
 export default function TranscriptPage() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const { theme } = useTheme();
+  const route = useRoute();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTranscript, setSelectedTranscript] = useState<Transcript | null>(null);
+  const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Sample transcript data
-  const transcripts: Transcript[] = [
-    {
-      id: 1,
-      title: "Team Sync #1",
-      timestamp: "Today, 2:00 PM",
-      duration: "45:20",
-      summary: "Discussed Q4 goals and team metrics. The team reviewed progress on current projects and set priorities for the upcoming quarter. Action items were assigned to team members.",
-      fullContent: "John: Welcome everyone to our Q4 planning session.\n\nSarah: Thanks John. I've prepared the metrics from Q3 to guide our discussion.\n\nJohn: Great. Let's start by looking at our current goals and how we're tracking.\n\nSarah: We've achieved 85% of our Q3 targets. The main gap is in the user acquisition area.\n\nMark: I think we need to adjust our marketing strategy. The current campaigns aren't performing as expected.\n\nJohn: Agreed. Let's allocate more resources to channels that are working well.\n\nSarah: Based on the data, social media and content marketing are our best performers.\n\nJohn: Let's increase budget there by 20% and reduce spend on paid search.\n\nMark: I'll update the marketing plan and share it by Friday.\n\nJohn: Great. Now let's discuss product roadmap priorities..."
-    },
-    {
-      id: 2,
-      title: "Team Sync #2",
-      timestamp: "Today, 3:30 PM",
-      duration: "32:15",
-      summary: "Product roadmap review. Discussed feature prioritization and timeline adjustments. Decided to push back analytics dashboard to focus on mobile enhancements.",
-      fullContent: "Lisa: Let's review the product roadmap for Q4.\n\nDavid: We need to make some adjustments to the timeline based on the feedback from engineering.\n\nLisa: What specifically needs to change?\n\nDavid: The analytics dashboard is taking longer than expected. We're dealing with some data processing challenges.\n\nEmma: How long do we need to delay it?\n\nDavid: At least two weeks. It's better to release it when it's stable.\n\nLisa: That makes sense. Let's prioritize the mobile app enhancements in the meantime.\n\nEmma: I can have the design team focus on finalizing the mobile UI updates.\n\nLisa: Perfect. Let's move forward with that plan and revisit the analytics timeline next week."
-    },
-    {
-      id: 3,
-      title: "Team Sync #3",
-      timestamp: "Today, 4:45 PM",
-      duration: "28:45",
-      summary: "Sprint planning session. Assigned tasks for the next two weeks. Discussed blockers and resource allocation for critical feature development.",
-      fullContent: "Mark: Welcome to sprint planning. Let's discuss our priorities for the next two weeks.\n\nJulia: The highest priority is finishing the authentication system updates.\n\nMark: What's the current status?\n\nJulia: We've completed about 70% of the work. The main components are in place, but we need to finalize security testing.\n\nAlex: I've been working on the password reset flow and it's almost done.\n\nMark: Great. Let's make sure we allocate enough time for testing.\n\nJulia: I'll need another developer to help with the final implementation.\n\nMark: Alex, can you pair with Julia once you're done with your current task?\n\nAlex: Yes, I should be available by Thursday.\n\nMark: Perfect. Let's also discuss the upcoming feature requests..."
-    }
-  ];
-
-  const filteredTranscripts = transcripts.filter(transcript => 
-    transcript.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    transcript.summary.toLowerCase().includes(searchQuery.toLowerCase())
+  // Load meetings when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      loadMeetings();
+    }, [])
   );
 
-  const viewFullTranscript = (transcript: Transcript) => {
-    setSelectedTranscript(transcript);
+  // Handle meetingId from navigation params
+  useEffect(() => {
+    const params = route.params as { meetingId?: string };
+    if (params?.meetingId) {
+      const meeting = meetings.find(m => m.id === params.meetingId);
+      if (meeting?.transcript) {
+        setSelectedMeeting(meeting);
+        setModalVisible(true);
+      }
+    }
+  }, [route.params, meetings]);
+
+  const loadMeetings = async () => {
+    try {
+      const storedMeetings = await AsyncStorage.getItem(MEETINGS_STORAGE_KEY);
+      if (storedMeetings) {
+        const allMeetings = JSON.parse(storedMeetings);
+        // Only show meetings that have transcripts
+        const meetingsWithTranscripts = allMeetings.filter((m: Meeting) => m.hasTranscript && m.transcript);
+        console.log('Meetings with transcripts:', meetingsWithTranscripts.length);
+        setMeetings(meetingsWithTranscripts);
+      }
+    } catch (error) {
+      console.error('Failed to load meetings:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    loadMeetings();
+  }, []);
+
+  const formatTime = (seconds: number): string => {
+    if (!seconds || seconds <= 0) return '00:00';
+    const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
+    return `${mins}:${secs}`;
+  };
+
+  const filteredMeetings = meetings.filter(meeting => 
+    meeting.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    meeting.transcript?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const viewFullTranscript = (meeting: Meeting) => {
+    setSelectedMeeting(meeting);
     setModalVisible(true);
   };
 
   const closeModal = () => {
     setModalVisible(false);
-    setSelectedTranscript(null);
+    setSelectedMeeting(null);
   };
 
   return (
     <ThemedView style={styles.container}>
+      <View style={styles.header}>
+        <ThemedText style={styles.headerTitle}>Transcripts</ThemedText>
+      </View>
+
       {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <TextInput
-          style={[
-            styles.searchInput,
-            {
-              backgroundColor: isDark ? Colors.dark.cardBackground : '#FFF5EB',
-              color: isDark ? Colors.dark.text : Colors.light.text,
-            }
-          ]}
-          placeholder="Search recordings..."
-          placeholderTextColor={isDark ? '#777' : '#999'}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
+        <View style={[
+          styles.searchInputContainer,
+          { backgroundColor: isDark ? Colors.dark.cardBackground : '#FFF5EB' }
+        ]}>
+          <Ionicons 
+            name="search" 
+            size={20} 
+            color={isDark ? '#777777' : '#999999'} 
+            style={styles.searchIcon}
+          />
+          <TextInput
+            style={[
+              styles.searchInput,
+              { color: isDark ? '#FFFFFF' : '#000000' }
+            ]}
+            placeholder="Search transcripts..."
+            placeholderTextColor={isDark ? '#777777' : '#999999'}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons 
+                name="close-circle" 
+                size={20} 
+                color={isDark ? '#777777' : '#999999'} 
+              />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Transcript List */}
-      <ScrollView style={styles.transcriptList}>
-        {filteredTranscripts.map((transcript) => (
-          <ThemedView
-            key={transcript.id}
-            style={styles.transcriptCard}
-            lightColor="#FFF5EB"
-            darkColor={Colors.dark.cardBackground}
-          >
-            <View style={styles.transcriptHeader}>
-              <View>
-                <ThemedText style={styles.transcriptTitle}>{transcript.title}</ThemedText>
-                <ThemedText style={styles.transcriptTime}>{transcript.timestamp}</ThemedText>
-              </View>
-              <ThemedText style={styles.transcriptDuration}>Duration: {transcript.duration}</ThemedText>
-            </View>
-            
-            <ThemedText 
-              style={styles.transcriptSummary} 
-              numberOfLines={3}
-            >
-              {transcript.summary}
+      <ScrollView 
+        style={styles.transcriptList}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#FF6B00']}
+            tintColor={isDark ? '#FFFFFF' : '#FF6B00'}
+          />
+        }
+      >
+        {filteredMeetings.length === 0 ? (
+          <ThemedView style={styles.emptyState}>
+            <Ionicons 
+              name="document-text-outline" 
+              size={48} 
+              color={isDark ? Colors.dark.text : Colors.light.text} 
+            />
+            <ThemedText style={styles.emptyStateText}>No transcripts available</ThemedText>
+            <ThemedText style={styles.emptyStateSubtext}>
+              Generate transcripts from your recordings in the Recent Meetings section
             </ThemedText>
-            
-            <TouchableOpacity 
-              style={[
-                styles.readFullButton,
-                { backgroundColor: isDark ? '#FF5722' : '#FFE0CC' }
-              ]}
-              onPress={() => viewFullTranscript(transcript)}
-            >
-              <ThemedText style={[
-                styles.readFullText,
-                { color: isDark ? '#FFFFFF' : '#333333' }
-              ]}>
-                Read Full
-              </ThemedText>
-            </TouchableOpacity>
           </ThemedView>
-        ))}
+        ) : (
+          filteredMeetings.map((meeting) => (
+            <ThemedView
+              key={meeting.id}
+              style={styles.transcriptCard}
+              lightColor="#FFF5EB"
+              darkColor={Colors.dark.cardBackground}
+            >
+              <View style={styles.transcriptHeader}>
+                <View>
+                  <ThemedText style={styles.transcriptTitle}>{meeting.title}</ThemedText>
+                  <ThemedText style={styles.transcriptTime}>{meeting.timestamp}</ThemedText>
+                </View>
+                <ThemedText style={styles.transcriptDuration}>
+                  Duration: {formatTime(meeting.duration)}
+                </ThemedText>
+              </View>
+              
+              <ThemedText 
+                style={styles.transcriptSummary} 
+                numberOfLines={3}
+              >
+                {meeting.transcript}
+              </ThemedText>
+              
+              <TouchableOpacity 
+                style={[
+                  styles.readFullButton,
+                  { backgroundColor: isDark ? '#FF5722' : '#FFE0CC' }
+                ]}
+                onPress={() => viewFullTranscript(meeting)}
+              >
+                <ThemedText style={[
+                  styles.readFullText,
+                  { color: isDark ? '#FFFFFF' : '#333333' }
+                ]}>
+                  Read Full
+                </ThemedText>
+              </TouchableOpacity>
+            </ThemedView>
+          ))
+        )}
       </ScrollView>
 
       {/* Full Transcript Modal */}
@@ -141,9 +208,9 @@ export default function TranscriptPage() {
           >
             <View style={styles.modalHeader}>
               <View>
-                <ThemedText style={styles.modalTitle}>{selectedTranscript?.title}</ThemedText>
+                <ThemedText style={styles.modalTitle}>{selectedMeeting?.title}</ThemedText>
                 <ThemedText style={styles.modalSubtitle}>
-                  {selectedTranscript?.timestamp} • Duration: {selectedTranscript?.duration}
+                  {selectedMeeting?.timestamp} • Duration: {formatTime(selectedMeeting?.duration || 0)}
                 </ThemedText>
               </View>
               <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
@@ -153,7 +220,7 @@ export default function TranscriptPage() {
             
             <ScrollView style={styles.modalBody}>
               <ThemedText style={styles.fullTranscriptText}>
-                {selectedTranscript?.fullContent}
+                {selectedMeeting?.transcript}
               </ThemedText>
             </ScrollView>
           </ThemedView>
@@ -166,21 +233,56 @@ export default function TranscriptPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 40,
+  },
+  header: {
+    paddingTop: 20,
+    paddingBottom: 15,
+    paddingHorizontal: 20,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
   },
   searchContainer: {
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
-  searchInput: {
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
     fontSize: 16,
+    padding: 0,
   },
   transcriptList: {
     flex: 1,
     paddingHorizontal: 20,
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+    borderRadius: 12,
+    marginVertical: 20,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 16,
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    opacity: 0.7,
+    marginTop: 8,
+    textAlign: 'center',
   },
   transcriptCard: {
     borderRadius: 12,
@@ -218,15 +320,14 @@ const styles = StyleSheet.create({
   },
   readFullButton: {
     alignSelf: 'flex-end',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     borderRadius: 12,
   },
   readFullText: {
     fontSize: 14,
     fontWeight: '500',
   },
-  // Modal styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',

@@ -8,14 +8,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, Meeting } from '../types/navigation';
+import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
+import { useTheme } from '@/hooks/ThemeContext';
+import { Colors } from '@/constants/Colors';
 
 // Get screen dimensions
 const { width } = Dimensions.get('window');
 
 export default function RecordScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   
   // Recording states
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
@@ -92,7 +96,7 @@ export default function RecordScreen() {
       await newRecording.prepareToRecordAsync({
         isMeteringEnabled: true,
         android: {
-          extension: '.mp3',
+          extension: '.wav',
           outputFormat: Audio.AndroidOutputFormat.MPEG_4,
           audioEncoder: Audio.AndroidAudioEncoder.AAC,
           sampleRate: 44100,
@@ -100,7 +104,7 @@ export default function RecordScreen() {
           bitRate: 128000,
         },
         ios: {
-          extension: '.mp3',
+          extension: '.wav',
           outputFormat: Audio.IOSOutputFormat.MPEG4AAC,
           audioQuality: Audio.IOSAudioQuality.HIGH,
           sampleRate: 44100,
@@ -157,7 +161,7 @@ export default function RecordScreen() {
       
       // Create a unique filename with timestamp
       const timestamp = new Date();
-      const fileName = `recording-${timestamp.getTime()}.mp3`;
+      const fileName = `recording-${timestamp.getTime()}.wav`;
       const newUri = `${FileSystem.documentDirectory}${fileName}`;
       
       // Save recording to app's document directory
@@ -226,17 +230,6 @@ export default function RecordScreen() {
     };
   }, [recording]);
 
-  // Theme colors
-  const theme = {
-    background: isDark ? '#121212' : '#FFFFFF',
-    text: isDark ? '#FFFFFF' : '#000000',
-    subtitle: isDark ? '#AAAAAA' : '#666666',
-    primary: '#FF5722', // Orange color for waveform and buttons
-    buttonText: '#FFFFFF',
-    buttonBackground: isDark ? '#FF5722' : '#FF5722',
-    waveformBackground: isDark ? '#333333' : '#F5F5F5',
-  };
-
   const animatedBarStyles = bars.map((bar) => {
     const animatedStyle = useAnimatedStyle(() => {
       const randomHeight = isRecording ? 20 + Math.random() * 60 : 20;
@@ -245,27 +238,27 @@ export default function RecordScreen() {
           damping: 10,
           stiffness: 80,
         }),
-        backgroundColor: theme.primary,
+        backgroundColor: isDark ? '#FF5722' : '#FF6B00',
       };
     });
     return animatedStyle;
   });
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <ThemedView style={styles.container}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       
       <View style={styles.recordingContainer}>
-        <Text style={[styles.title, { color: theme.text }]}>
+        <ThemedText style={styles.title}>
           {isRecording ? "Recording in Progress" : "Ready to Record"}
-        </Text>
+        </ThemedText>
         
         {countdown > 0 ? (
           <Animated.Text 
             style={[
               styles.countdown, 
               { 
-                color: theme.text,
+                color: isDark ? '#FFFFFF' : '#000000',
                 transform: [{ scale: countdownAnimation }]
               }
             ]}
@@ -273,14 +266,14 @@ export default function RecordScreen() {
             {countdown}
           </Animated.Text>
         ) : (
-          <Text style={[styles.timer, { color: theme.text }]}>
+          <ThemedText style={styles.timer}>
             {formatTime(recordingTime)}
-          </Text>
+          </ThemedText>
         )}
         
         {/* Waveform visualization */}
         {isRecording && (
-          <View style={[styles.waveformContainer, { backgroundColor: theme.waveformBackground }]}>
+          <View style={[styles.waveformContainer, { backgroundColor: isDark ? '#333333' : '#FFF5EB' }]}>
             {bars.map((bar, index) => (
               <Animated.View
                 key={bar.id}
@@ -292,7 +285,7 @@ export default function RecordScreen() {
         
         {showStartButton ? (
           <TouchableOpacity
-            style={[styles.button, { backgroundColor: theme.buttonBackground }]}
+            style={[styles.button, { backgroundColor: isDark ? '#FF5722' : '#FF6B00' }]}
             onPress={startCountdown}
           >
             <Text style={styles.buttonText}>Start Recording</Text>
@@ -306,7 +299,7 @@ export default function RecordScreen() {
           </TouchableOpacity>
         )}
       </View>
-    </View>
+    </ThemedView>
   );
 }
 

@@ -7,6 +7,7 @@ export interface Meeting {
   uri: string;
   duration: number;
   hasTranscript: boolean;
+  transcript?: string;
 }
 
 export type RootStackParamList = {
@@ -14,6 +15,7 @@ export type RootStackParamList = {
     screen: 'index' | 'record' | 'transcripts';
     params?: {
       newMeeting?: Meeting;
+      meetingId?: string;
     };
   };
 };
