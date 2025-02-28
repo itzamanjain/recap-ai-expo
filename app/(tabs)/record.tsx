@@ -12,6 +12,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { useTheme } from '@/hooks/ThemeContext';
 import { Colors } from '@/constants/Colors';
+import Reanimated from 'react-native-reanimated';
 
 // Get screen dimensions
 const { width } = Dimensions.get('window');
@@ -37,6 +38,26 @@ export default function RecordScreen() {
     id: i,
     height: useSharedValue(20),
   }));
+
+  // Update waveform animation periodically when recording
+  useEffect(() => {
+    let animationInterval: NodeJS.Timeout | null = null;
+    
+    if (isRecording) {
+      animationInterval = setInterval(() => {
+        // This will trigger the useAnimatedStyle to recalculate with new random heights
+        bars.forEach(bar => {
+          bar.height.value = 20 + Math.random() * 60;
+        });
+      }, 200);
+    }
+    
+    return () => {
+      if (animationInterval) {
+        clearInterval(animationInterval);
+      }
+    };
+  }, [isRecording, bars]);
 
   // Format time for display (MM:SS)
   const formatTime = (seconds: number): string => {
@@ -266,23 +287,28 @@ export default function RecordScreen() {
             {countdown}
           </Animated.Text>
         ) : (
-          <ThemedText style={styles.timer}>
-            {formatTime(recordingTime)}
-          </ThemedText>
+          isRecording && (
+            <ThemedText style={styles.timer}>
+              {formatTime(recordingTime)}
+            </ThemedText>
+          )
         )}
-        
-        {/* Waveform visualization */}
+
+        {/* Animated waveform visualization */}
         {isRecording && (
-          <View style={[styles.waveformContainer, { backgroundColor: isDark ? '#333333' : '#FFF5EB' }]}>
+          <View style={[
+            styles.waveformContainer,
+            { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)' }
+          ]}>
             {bars.map((bar, index) => (
-              <Animated.View
+              <Reanimated.View
                 key={bar.id}
                 style={[styles.bar, animatedBarStyles[index]]}
               />
             ))}
           </View>
         )}
-        
+
         {showStartButton ? (
           <TouchableOpacity
             style={[styles.button, { backgroundColor: isDark ? '#FF5722' : '#FF6B00' }]}
@@ -322,6 +348,7 @@ const styles = StyleSheet.create({
   },
   timer: {
     fontSize: 48,
+    marginTop: 20,
     fontWeight: 'bold',
     marginVertical: 20,
     fontVariant: ['tabular-nums'],

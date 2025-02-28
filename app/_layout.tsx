@@ -20,19 +20,27 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const { theme } = useTheme();
+  const { theme, isThemeReady } = useTheme();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
+    if (loaded && isThemeReady) {
+      SplashScreen.hideAsync().catch(() => {
+        // Ignore error if splash screen is already hidden
+      });
     }
-  }, [loaded]);
+  }, [loaded, isThemeReady]);
 
-  if (!loaded) {
-    return null;
+  if (!loaded || !isThemeReady) {
+    return (
+      <NavigationThemeProvider value={DefaultTheme}>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        </Stack>
+      </NavigationThemeProvider>
+    );
   }
 
   return (

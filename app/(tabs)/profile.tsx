@@ -113,13 +113,7 @@ export default function ProfileScreen() {
           </View>
         </ThemedView>
       </ScrollView>
-
-      {/* Float Action Button */}
-      <View style={styles.fabContainer}>
-        <TouchableOpacity style={styles.fab}>
-          <Text style={styles.fabIcon}>+</Text>
-        </TouchableOpacity>
-      </View>
+     
     </ThemedView>
   );
 }

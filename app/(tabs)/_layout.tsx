@@ -6,15 +6,15 @@ import { AudioLinesIcon, HomeIcon, NotebookTabsIcon, NotepadTextDashedIcon, User
 import { HapticTab } from '@/components/HapticTab';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/hooks/ThemeContext';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const { theme } = useTheme();
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: Colors[theme].tint,
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
@@ -32,7 +32,7 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => (
             <HomeIcon
               size={28}
-              color={focused ? Colors[colorScheme ?? 'light'].tint : Colors[colorScheme ?? 'light'].tabIconDefault}
+              color={focused ? Colors[theme].tint : Colors[theme].tabIconDefault}
             />
           ),
         }}
@@ -44,7 +44,7 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => (
             <NotepadTextDashedIcon
               size={28}
-              color={focused ? Colors[colorScheme ?? 'light'].tint : Colors[colorScheme ?? 'light'].tabIconDefault}
+              color={focused ? Colors[theme].tint : Colors[theme].tabIconDefault}
             />
           ),
         }}
@@ -68,7 +68,7 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => (
             <NotebookTabsIcon
               size={28}
-              color={focused ? Colors[colorScheme ?? 'light'].tint : Colors[colorScheme ?? 'light'].tabIconDefault}
+              color={focused ? Colors[theme].tint : Colors[theme].tabIconDefault}
             />
           ),
         }}
@@ -80,7 +80,7 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => (
             <UserCircle
               size={28}
-              color={focused ? Colors[colorScheme ?? 'light'].tint : Colors[colorScheme ?? 'light'].tabIconDefault}
+              color={focused ? Colors[theme].tint : Colors[theme].tabIconDefault}
             />
           ),
         }}
