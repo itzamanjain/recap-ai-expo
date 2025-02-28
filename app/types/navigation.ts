@@ -8,6 +8,7 @@ export interface Meeting {
   duration: number;
   hasTranscript: boolean;
   transcript?: string;
+  summary?: string;
 }
 
 export type RootStackParamList = {

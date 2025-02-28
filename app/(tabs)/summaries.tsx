@@ -1,70 +1,62 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, TouchableOpacity, Modal, ScrollView, Share as RNShare, Clipboard, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, TouchableOpacity, Modal, ScrollView, Share as RNShare, Alert } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/hooks/ThemeContext';
+import { Meeting } from '@/app/types/navigation';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Clipboard from 'expo-clipboard';
 
-interface Transcript {
-  id: number;
-  title: string;
-  timestamp: string;
-  preview: string;
-  content: string;
-}
+const MEETINGS_STORAGE_KEY = '@recap_ai_meetings';
 
 export default function SummariesScreen() {
-  const [selectedTranscript, setSelectedTranscript] = useState<Transcript | null>(null);
+  const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
   const { theme } = useTheme();
 
-  const transcripts: Transcript[] = [
-    {
-      id: 1,
-      title: "Team Sync #1 Transcript",
-      timestamp: "Today, 2:00 PM",
-      preview: "John: Let's review our Q4 goals. Sarah: We need to focus on increasing user engagement...",
-      content: "John: Let's review our Q4 goals.\nSarah: We need to focus on increasing user engagement. Our current metrics show a decline in daily active users.\nJohn: Good point. What's our target for Q4?\nSarah: We should aim for a 15% increase in DAU and improve session duration by 20%.\nMark: I think we also need to consider improving our onboarding flow to reduce drop-offs.\nJohn: Agreed. Let's make that a priority for the next sprint."
-    },
-    {
-      id: 2,
-      title: "Team Sync #2 Transcript",
-      timestamp: "Today, 3:30 PM",
-      preview: "Lisa: Let's go through the product roadmap. David: We need to push back the analytics...",
-      content: "Lisa: Let's go through the product roadmap for the next quarter.\nDavid: We need to push back the analytics dashboard release. The engineering team is still working on fixing some critical bugs.\nLisa: How long of a delay are we looking at?\nDavid: Probably two weeks. We want to make sure it's stable before shipping.\nEmma: While we're waiting on that, should we prioritize the mobile app improvements?\nLisa: Yes, let's shift focus to the mobile experience and get that ready for release on schedule."
-    },
-    {
-      id: 3,
-      title: "Team Sync #3 Transcript",
-      timestamp: "Today, 4:45 PM",
-      preview: "Mark: What are our priorities for this sprint? Julia: We need to finish the authentication...",
-      content: "Mark: What are our priorities for this sprint?\nJulia: We need to finish the authentication workflow and implement the password reset functionality.\nMark: What's the current status?\nJulia: The login and registration flows are complete, but we still need to implement the email verification process.\nAlex: I've started working on the password reset flow. Should be done by Thursday.\nMark: Great. Let's also make sure we have comprehensive test coverage for these security features."
-    }
-  ];
+  useEffect(() => {
+    loadMeetings();
+  }, []);
 
-  const copyToClipboard = (text: string) => {
-    Clipboard.setString(text);
+  const loadMeetings = async () => {
+    try {
+      const storedMeetings = await AsyncStorage.getItem(MEETINGS_STORAGE_KEY);
+      if (storedMeetings) {
+        const allMeetings = JSON.parse(storedMeetings);
+        // Only show meetings that have summaries
+        const meetingsWithSummaries = allMeetings.filter((m: Meeting) => m.summary);
+        setMeetings(meetingsWithSummaries);
+      }
+    } catch (error) {
+      console.error('Failed to load meetings:', error);
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    await Clipboard.setStringAsync(text);
     Alert.alert("Copied", "Content copied to clipboard");
   };
 
-  const shareTranscript = async (transcript: Transcript) => {
+  const shareSummary = async (meeting: Meeting) => {
     try {
       await RNShare.share({
-        message: `${transcript.title}\n${transcript.timestamp}\n\n${transcript.content}`,
+        message: `${meeting.title}\n${meeting.timestamp}\n\nSummary:\n${meeting.summary}`,
       });
     } catch (error) {
       Alert.alert("Error", "Failed to share content");
     }
   };
 
-  const viewTranscript = (transcript: Transcript) => {
-    setSelectedTranscript(transcript);
+  const viewSummary = (meeting: Meeting) => {
+    setSelectedMeeting(meeting);
     setModalVisible(true);
   };
 
   const closeModal = () => {
     setModalVisible(false);
-    setSelectedTranscript(null);
+    setSelectedMeeting(null);
   };
 
   return (
@@ -74,44 +66,55 @@ export default function SummariesScreen() {
       </View>
 
       <ScrollView style={styles.transcriptList}>
-        {transcripts.map((transcript) => (
-          <ThemedView 
-            key={transcript.id} 
-            style={styles.transcriptCard}
-            lightColor={Colors.light.cardBackground}
-            darkColor={Colors.dark.cardBackground}
-          >
-            <ThemedText style={styles.transcriptTitle}>{transcript.title}</ThemedText>
-            <ThemedText style={styles.transcriptTimestamp}>{transcript.timestamp}</ThemedText>
-            <ThemedText style={styles.transcriptPreview} numberOfLines={2}>{transcript.preview}</ThemedText>
-            
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity 
-                style={[styles.actionButton, { backgroundColor: theme === 'dark' ? Colors.dark.background : Colors.light.background }]}
-                onPress={() => copyToClipboard(transcript.content)}
-              >
-                <ThemedText style={styles.buttonText}>Copy</ThemedText>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.actionButton, { backgroundColor: theme === 'dark' ? Colors.dark.background : Colors.light.background }]}
-                onPress={() => shareTranscript(transcript)}
-              >
-                <ThemedText style={styles.buttonText}>Share</ThemedText>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.actionButton, { backgroundColor: theme === 'dark' ? Colors.dark.background : Colors.light.background }]}
-                onPress={() => viewTranscript(transcript)}
-              >
-                <ThemedText style={styles.buttonText}>View</ThemedText>
-              </TouchableOpacity>
-            </View>
+        {meetings.length === 0 ? (
+          <ThemedView style={styles.emptyState}>
+            <ThemedText style={styles.emptyStateText}>No summaries available</ThemedText>
+            <ThemedText style={styles.emptyStateSubtext}>
+              Generate summaries from your transcripts in the Transcripts section
+            </ThemedText>
           </ThemedView>
-        ))}
+        ) : (
+          meetings.map((meeting) => (
+            <ThemedView
+              key={meeting.id}
+              style={styles.transcriptCard}
+              lightColor={Colors.light.cardBackground}
+              darkColor={Colors.dark.cardBackground}
+            >
+              <ThemedText style={styles.transcriptTitle}>{meeting.title}</ThemedText>
+              <ThemedText style={styles.transcriptTimestamp}>{meeting.timestamp}</ThemedText>
+              <ThemedText style={styles.transcriptPreview} numberOfLines={3}>
+                {meeting.summary}
+              </ThemedText>
+              
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={[styles.actionButton, { backgroundColor: theme === 'dark' ? Colors.dark.background : Colors.light.background }]}
+                  onPress={() => meeting.summary && copyToClipboard(meeting.summary)}
+                >
+                  <ThemedText style={styles.buttonText}>Copy</ThemedText>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[styles.actionButton, { backgroundColor: theme === 'dark' ? Colors.dark.background : Colors.light.background }]}
+                  onPress={() => shareSummary(meeting)}
+                >
+                  <ThemedText style={styles.buttonText}>Share</ThemedText>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[styles.actionButton, { backgroundColor: theme === 'dark' ? Colors.dark.background : Colors.light.background }]}
+                  onPress={() => viewSummary(meeting)}
+                >
+                  <ThemedText style={styles.buttonText}>View</ThemedText>
+                </TouchableOpacity>
+              </View>
+            </ThemedView>
+          ))
+        )}
       </ScrollView>
 
-      {/* Transcript Detail Modal */}
+      {/* Summary Detail Modal */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -119,17 +122,17 @@ export default function SummariesScreen() {
         onRequestClose={closeModal}
       >
         <View style={styles.modalOverlay}>
-          <ThemedView 
+          <ThemedView
             style={styles.modalContent}
             lightColor={Colors.light.background}
             darkColor={Colors.dark.background}
           >
             <View style={[styles.modalHeader, { borderBottomColor: theme === 'dark' ? Colors.dark.cardBackground : Colors.light.cardBackground }]}>
               <ThemedText style={styles.modalTitle}>
-                {selectedTranscript?.title}
+                {selectedMeeting?.title}
               </ThemedText>
               <ThemedText style={styles.modalTimestamp}>
-                {selectedTranscript?.timestamp}
+                {selectedMeeting?.timestamp}
               </ThemedText>
               <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
                 <ThemedText style={styles.closeButtonText}>✕</ThemedText>
@@ -138,21 +141,21 @@ export default function SummariesScreen() {
 
             <ScrollView style={styles.modalBody}>
               <ThemedText style={styles.transcriptContent}>
-                {selectedTranscript?.content}
+                {selectedMeeting?.summary}
               </ThemedText>
             </ScrollView>
 
             <View style={[styles.modalFooter, { borderTopColor: theme === 'dark' ? Colors.dark.cardBackground : Colors.light.cardBackground }]}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.modalButton}
-                onPress={() => selectedTranscript && copyToClipboard(selectedTranscript.content)}
+                onPress={() => selectedMeeting?.summary && copyToClipboard(selectedMeeting.summary)}
               >
                 <ThemedText style={styles.modalButtonText}>Copy</ThemedText>
               </TouchableOpacity>
               
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.modalButton}
-                onPress={() => selectedTranscript && shareTranscript(selectedTranscript)}
+                onPress={() => selectedMeeting && shareSummary(selectedMeeting)}
               >
                 <ThemedText style={styles.modalButtonText}>Share</ThemedText>
               </TouchableOpacity>
@@ -281,5 +284,23 @@ const styles = StyleSheet.create({
   modalButtonText: {
     color: '#FFFFFF',
     fontWeight: '500',
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+    borderRadius: 12,
+    marginVertical: 20,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 16,
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    opacity: 0.7,
+    marginTop: 8,
+    textAlign: 'center',
   },
 });

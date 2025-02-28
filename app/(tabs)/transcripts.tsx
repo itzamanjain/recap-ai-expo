@@ -1,89 +1,151 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, TouchableOpacity, ScrollView, TextInput, Modal, useColorScheme, RefreshControl } from 'react-native';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { Colors } from '@/constants/Colors';
-import { useTheme } from '@/hooks/ThemeContext';
-import { Meeting } from '@/app/types/navigation';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRoute, useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+"use client"
 
-const MEETINGS_STORAGE_KEY = '@recap_ai_meetings';
+import React, { useState, useEffect } from "react"
+import {
+  StyleSheet,
+  View,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
+  Modal,
+  useColorScheme,
+  RefreshControl,
+  Alert,
+} from "react-native"
+import * as Clipboard from "expo-clipboard"
+import { ThemedText } from "@/components/ThemedText"
+import { ThemedView } from "@/components/ThemedView"
+import { Colors } from "@/constants/Colors"
+import { useTheme } from "@/hooks/ThemeContext"
+import type { Meeting } from "@/app/types/navigation"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import { useRoute, useFocusEffect } from "@react-navigation/native"
+import { Ionicons } from "@expo/vector-icons"
+import { generateSummary } from "@/lib/summurize"
+import { Loader2 } from "lucide-react-native"
+
+const MEETINGS_STORAGE_KEY = "@recap_ai_meetings"
 
 export default function TranscriptPage() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  const { theme } = useTheme();
-  const route = useRoute();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [meetings, setMeetings] = useState<Meeting[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
+  const colorScheme = useColorScheme()
+  const isDark = colorScheme === "dark"
+  const { theme } = useTheme()
+  const route = useRoute()
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null)
+  const [modalVisible, setModalVisible] = useState(false)
+  const [summaryModalVisible, setSummaryModalVisible] = useState(false)
+  const [currentSummary, setCurrentSummary] = useState<string>("")
+  const [meetings, setMeetings] = useState<Meeting[]>([])
+  const [refreshing, setRefreshing] = useState(false)
+  const [loadingSummury, setLoadingSummury] = useState(false)
 
   // Load meetings when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      loadMeetings();
-    }, [])
-  );
+      loadMeetings()
+    }, []),
+  )
 
   // Handle meetingId from navigation params
   useEffect(() => {
-    const params = route.params as { meetingId?: string };
+    const params = route.params as { meetingId?: string }
     if (params?.meetingId) {
-      const meeting = meetings.find(m => m.id === params.meetingId);
+      const meeting = meetings.find((m) => m.id === params.meetingId)
       if (meeting?.transcript) {
-        setSelectedMeeting(meeting);
-        setModalVisible(true);
+        setSelectedMeeting(meeting)
+        // Don't automatically open the modal
+        // setModalVisible(true); - Remove this line
       }
     }
-  }, [route.params, meetings]);
+  }, [route.params, meetings])
 
   const loadMeetings = async () => {
     try {
-      const storedMeetings = await AsyncStorage.getItem(MEETINGS_STORAGE_KEY);
+      const storedMeetings = await AsyncStorage.getItem(MEETINGS_STORAGE_KEY)
       if (storedMeetings) {
-        const allMeetings = JSON.parse(storedMeetings);
+        const allMeetings = JSON.parse(storedMeetings)
         // Only show meetings that have transcripts
-        const meetingsWithTranscripts = allMeetings.filter((m: Meeting) => m.hasTranscript && m.transcript);
-        console.log('Meetings with transcripts:', meetingsWithTranscripts.length);
-        setMeetings(meetingsWithTranscripts);
+        const meetingsWithTranscripts = allMeetings.filter((m: Meeting) => m.hasTranscript && m.transcript)
+        console.log("Meetings with transcripts:", meetingsWithTranscripts.length)
+        setMeetings(meetingsWithTranscripts)
       }
     } catch (error) {
-      console.error('Failed to load meetings:', error);
+      console.error("Failed to load meetings:", error)
     } finally {
-      setRefreshing(false);
+      setRefreshing(false)
     }
-  };
+  }
+
+  const viewSummury = async (meeting: Meeting) => {
+    const transcript = meeting.transcript
+    if (!transcript) return
+
+    try {
+      // Close transcript modal if it's open
+      setModalVisible(false)
+      setLoadingSummury(true)
+
+      const res = await generateSummary(transcript)
+      setCurrentSummary(res)
+      setSummaryModalVisible(true)
+
+      // Update meeting with summary in state and storage
+      const updatedMeeting = { ...meeting, summary: res }
+      const updatedMeetings = meetings.map((m) => (m.id === meeting.id ? updatedMeeting : m))
+      setMeetings(updatedMeetings)
+
+      // Save to AsyncStorage
+      const storedMeetings = await AsyncStorage.getItem(MEETINGS_STORAGE_KEY)
+      if (storedMeetings) {
+        const allMeetings = JSON.parse(storedMeetings)
+        const newMeetings = allMeetings.map((m: Meeting) => (m.id === meeting.id ? updatedMeeting : m))
+        await AsyncStorage.setItem(MEETINGS_STORAGE_KEY, JSON.stringify(newMeetings))
+      }
+    } catch (error) {
+      console.error("Failed to generate summary:", error)
+    }finally{
+      setLoadingSummury(false)
+    }
+  }
+
+  const closeSummaryModal = () => {
+    setSummaryModalVisible(false)
+    // Only reset current summary when closing summary modal
+    setCurrentSummary("")
+  }
 
   const onRefresh = React.useCallback(() => {
-    setRefreshing(true);
-    loadMeetings();
-  }, []);
+    setRefreshing(true)
+    loadMeetings()
+  }, [])
 
   const formatTime = (seconds: number): string => {
-    if (!seconds || seconds <= 0) return '00:00';
-    const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
-    const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
-    return `${mins}:${secs}`;
-  };
+    if (!seconds || seconds <= 0) return "00:00"
+    const mins = Math.floor(seconds / 60)
+      .toString()
+      .padStart(2, "0")
+    const secs = Math.floor(seconds % 60)
+      .toString()
+      .padStart(2, "0")
+    return `${mins}:${secs}`
+  }
 
-  const filteredMeetings = meetings.filter(meeting => 
-    meeting.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    meeting.transcript?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredMeetings = meetings.filter(
+    (meeting) =>
+      meeting.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      meeting.transcript?.toLowerCase().includes(searchQuery.toLowerCase()),
+  )
 
   const viewFullTranscript = (meeting: Meeting) => {
-    setSelectedMeeting(meeting);
-    setModalVisible(true);
-  };
+    setSelectedMeeting(meeting)
+    setModalVisible(true)
+  }
 
   const closeModal = () => {
-    setModalVisible(false);
-    setSelectedMeeting(null);
-  };
+    setModalVisible(false)
+    // Don't reset selectedMeeting here as it might be needed for the summary
+  }
 
   return (
     <ThemedView style={styles.container}>
@@ -93,57 +155,40 @@ export default function TranscriptPage() {
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <View style={[
-          styles.searchInputContainer,
-          { backgroundColor: isDark ? Colors.dark.cardBackground : '#FFF5EB' }
-        ]}>
-          <Ionicons 
-            name="search" 
-            size={20} 
-            color={isDark ? '#777777' : '#999999'} 
-            style={styles.searchIcon}
-          />
+        <View
+          style={[styles.searchInputContainer, { backgroundColor: isDark ? Colors.dark.cardBackground : "#FFF5EB" }]}
+        >
+          <Ionicons name="search" size={20} color={isDark ? "#777777" : "#999999"} style={styles.searchIcon} />
           <TextInput
-            style={[
-              styles.searchInput,
-              { color: isDark ? '#FFFFFF' : '#000000' }
-            ]}
+            style={[styles.searchInput, { color: isDark ? "#FFFFFF" : "#000000" }]}
             placeholder="Search transcripts..."
-            placeholderTextColor={isDark ? '#777777' : '#999999'}
+            placeholderTextColor={isDark ? "#777777" : "#999999"}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons 
-                name="close-circle" 
-                size={20} 
-                color={isDark ? '#777777' : '#999999'} 
-              />
+            <TouchableOpacity onPress={() => setSearchQuery("")}>
+              <Ionicons name="close-circle" size={20} color={isDark ? "#777777" : "#999999"} />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
       {/* Transcript List */}
-      <ScrollView 
+      <ScrollView
         style={styles.transcriptList}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={['#FF6B00']}
-            tintColor={isDark ? '#FFFFFF' : '#FF6B00'}
+            colors={["#FF6B00"]}
+            tintColor={isDark ? "#FFFFFF" : "#FF6B00"}
           />
         }
       >
         {filteredMeetings.length === 0 ? (
           <ThemedView style={styles.emptyState}>
-            <Ionicons 
-              name="document-text-outline" 
-              size={48} 
-              color={isDark ? Colors.dark.text : Colors.light.text} 
-            />
+            <Ionicons name="document-text-outline" size={48} color={isDark ? Colors.dark.text : Colors.light.text} />
             <ThemedText style={styles.emptyStateText}>No transcripts available</ThemedText>
             <ThemedText style={styles.emptyStateSubtext}>
               Generate transcripts from your recordings in the Recent Meetings section
@@ -162,50 +207,41 @@ export default function TranscriptPage() {
                   <ThemedText style={styles.transcriptTitle}>{meeting.title}</ThemedText>
                   <ThemedText style={styles.transcriptTime}>{meeting.timestamp}</ThemedText>
                 </View>
-                <ThemedText style={styles.transcriptDuration}>
-                  Duration: {formatTime(meeting.duration)}
-                </ThemedText>
+                <ThemedText style={styles.transcriptDuration}>Duration: {formatTime(meeting.duration)}</ThemedText>
               </View>
-              
-              <ThemedText 
-                style={styles.transcriptSummary} 
-                numberOfLines={3}
-              >
+
+              <ThemedText style={styles.transcriptSummary} numberOfLines={3}>
                 {meeting.transcript}
               </ThemedText>
-              
-              <TouchableOpacity 
-                style={[
-                  styles.readFullButton,
-                  { backgroundColor: isDark ? '#FF5722' : '#FFE0CC' }
-                ]}
-                onPress={() => viewFullTranscript(meeting)}
-              >
-                <ThemedText style={[
-                  styles.readFullText,
-                  { color: isDark ? '#FFFFFF' : '#333333' }
-                ]}>
-                  Read Full
-                </ThemedText>
-              </TouchableOpacity>
+
+              <View style={styles.buttonsSideBySide}>
+                <TouchableOpacity
+                  style={[styles.readFullButton, { backgroundColor: isDark ? "#FF5722" : "#FFE0CC" }]}
+                  onPress={() => viewFullTranscript(meeting)}
+                >
+                  <ThemedText style={[styles.readFullText, { color: isDark ? "#FFFFFF" : "#333333" }]}>
+                    Read Full
+                  </ThemedText>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.readFullButton, { backgroundColor: isDark ? "#FF5722" : "#FFE0CC" }]}
+                  onPress={() => viewSummury(meeting)}
+                >
+                  {loadingSummury ?  <ThemedText>loading....</ThemedText> :<ThemedText style={[styles.readFullText, { color: isDark ? "#FFFFFF" : "#333333" }]}>
+                    Read Summury
+                  </ThemedText>}
+                </TouchableOpacity>
+              </View>
             </ThemedView>
           ))
         )}
       </ScrollView>
 
       {/* Full Transcript Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={closeModal}
-      >
+      <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={closeModal}>
         <View style={styles.modalOverlay}>
-          <ThemedView
-            style={styles.modalContent}
-            lightColor="#FFFFFF"
-            darkColor={Colors.dark.cardBackground}
-          >
+          <ThemedView style={styles.modalContent} lightColor="#FFFFFF" darkColor={Colors.dark.cardBackground}>
             <View style={styles.modalHeader}>
               <View>
                 <ThemedText style={styles.modalTitle}>{selectedMeeting?.title}</ThemedText>
@@ -217,17 +253,50 @@ export default function TranscriptPage() {
                 <ThemedText style={styles.closeButtonText}>✕</ThemedText>
               </TouchableOpacity>
             </View>
-            
+
             <ScrollView style={styles.modalBody}>
-              <ThemedText style={styles.fullTranscriptText}>
-                {selectedMeeting?.transcript}
-              </ThemedText>
+              <ThemedText style={styles.fullTranscriptText}>{selectedMeeting?.transcript}</ThemedText>
             </ScrollView>
           </ThemedView>
         </View>
       </Modal>
+
+      {/* Summary Modal */}
+      <Modal animationType="slide" transparent={true} visible={summaryModalVisible} onRequestClose={closeSummaryModal}>
+        <View style={styles.modalOverlay}>
+          <ThemedView style={styles.modalContent} lightColor="#FFFFFF" darkColor={Colors.dark.cardBackground}>
+            <View style={styles.modalHeader}>
+              <View>
+                <ThemedText style={styles.modalTitle}>Meeting Summary</ThemedText>
+                <ThemedText style={styles.modalSubtitle}>Your meeting Summury & action Items</ThemedText>
+              </View>
+              <TouchableOpacity style={styles.closeButton} onPress={closeSummaryModal}>
+                <ThemedText style={styles.closeButtonText}>✕</ThemedText>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody}>
+              <ThemedText style={styles.fullTranscriptText}>{currentSummary}</ThemedText>
+            </ScrollView>
+
+            <View style={[styles.modalFooter, { borderTopColor: isDark ? "#333333" : "#EEEEEE" }]}>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: isDark ? "#FF5722" : "#FFE0CC" }]}
+                onPress={() => {
+                  Clipboard.setString(currentSummary)
+                  Alert.alert("Copied", "Summary copied to clipboard")
+                }}
+              >
+                <ThemedText style={[styles.modalButtonText, { color: isDark ? "#FFFFFF" : "#333333" }]}>
+                  Copy Summary
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
+          </ThemedView>
+        </View>
+      </Modal>
     </ThemedView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -239,17 +308,23 @@ const styles = StyleSheet.create({
     paddingBottom: 15,
     paddingHorizontal: 20,
   },
+  buttonsSideBySide: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
   headerTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   searchContainer: {
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
   searchInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -267,42 +342,42 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: 40,
     borderRadius: 12,
     marginVertical: 20,
   },
   emptyStateText: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     marginTop: 16,
   },
   emptyStateSubtext: {
     fontSize: 14,
     opacity: 0.7,
     marginTop: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
   transcriptCard: {
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
   transcriptHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 8,
   },
   transcriptTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   transcriptTime: {
     fontSize: 14,
@@ -319,39 +394,39 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   readFullButton: {
-    alignSelf: 'flex-end',
+    alignSelf: "flex-end",
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 12,
   },
   readFullText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalContent: {
     borderRadius: 16,
-    width: '90%',
-    maxHeight: '80%',
+    width: "90%",
+    maxHeight: "80%",
     padding: 20,
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
+    borderBottomColor: "#EEEEEE",
     paddingBottom: 16,
     marginBottom: 16,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   modalSubtitle: {
     fontSize: 14,
@@ -363,14 +438,31 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     fontSize: 22,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     opacity: 0.7,
   },
   modalBody: {
-    maxHeight: '90%',
+    maxHeight: "90%",
   },
   fullTranscriptText: {
     fontSize: 16,
     lineHeight: 24,
   },
-});
+  modalFooter: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    paddingTop: 16,
+    marginTop: 16,
+  },
+  modalButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    marginLeft: 12,
+  },
+  modalButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+})
+
