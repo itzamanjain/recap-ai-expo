@@ -21,8 +21,8 @@ import * as FileSystem from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
 import { Meeting, RootStackParamList } from '../types/navigation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { transcribeUrlDeepgram } from '@/lib/transcribe';
-import { Edit, Edit2Icon, PenIcon, PenTool } from 'lucide-react-native';
+import { transcribeUrlDeepgram } from '../../lib/transcribe';
+import { Edit } from 'lucide-react-native';
 
 const MEETINGS_STORAGE_KEY = '@recap_ai_meetings';
 

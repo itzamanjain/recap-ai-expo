@@ -1,0 +1,31 @@
+{
+  "cli": {
+    "version": ">= 15.0.12",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "platforms": ["android", "ios"],
+      "workflow": "managed"
+    },
+    "preview": {
+      "distribution": "internal",
+      "platforms": ["android", "ios"],
+      "workflow": "managed"
+    },
+    "production": {
+      "autoIncrement": true,
+      "releaseChannel": "production",
+      "platforms": ["android", "ios"],
+      "workflow": "managed",
+      "android": {
+        "buildType": "apk" 
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

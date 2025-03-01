@@ -21,8 +21,7 @@ import type { Meeting } from "@/app/types/navigation"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useRoute, useFocusEffect } from "@react-navigation/native"
 import { Ionicons } from "@expo/vector-icons"
-import { generateSummary } from "@/lib/summurize"
-import { Loader2 } from "lucide-react-native"
+import { generateSummary } from "../../lib/summurize"
 
 const MEETINGS_STORAGE_KEY = "@recap_ai_meetings"
 
