@@ -1,7 +1,8 @@
 import OpenAI from 'openai';
 
 // const openai_api_key = process.env.EXPO_PUBLIC_API_KEY;
-const openai_api_key = "";
+const openai_api_key = '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';
+
 if (!openai_api_key) {
     throw new Error('Summury : API key is not set!!');
 }

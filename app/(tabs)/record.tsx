@@ -61,6 +61,37 @@ export default function RecordScreen() {
     }
   }, [isRecording, bars])
 
+  // Effect to manage recording timer
+  useEffect(() => {
+    if (isRecording) {
+      // Clear any existing interval
+      if (timerRef.current) {
+        clearInterval(timerRef.current)
+      }
+      
+      // Start the timer
+      startTimeRef.current = Date.now()
+      timerRef.current = setInterval(() => {
+        const elapsedSeconds = Math.floor((Date.now() - startTimeRef.current) / 1000)
+        setRecordingTime(elapsedSeconds)
+      }, 1000)
+    } else {
+      // Clear interval when not recording
+      if (timerRef.current) {
+        clearInterval(timerRef.current)
+        timerRef.current = null
+      }
+    }
+
+    // Cleanup on effect cleanup
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current)
+        timerRef.current = null
+      }
+    }
+  }, [isRecording])
+
   // Format time for display (MM:SS)
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60)
@@ -146,24 +177,13 @@ export default function RecordScreen() {
       })
 
       await newRecording.startAsync()
-      startTimeRef.current = Date.now()
-
+      
       setRecording(newRecording)
       setIsRecording(true)
       setRecordingTime(0)
       setShowStartButton(false)
-
-      // Start timer using accurate time tracking
-      if (timerRef.current) {
-        clearInterval(timerRef.current)
-        timerRef.current = null
-      }
-
-      startTimeRef.current = Date.now()
-      timerRef.current = setInterval(() => {
-        const elapsedSeconds = Math.floor((Date.now() - startTimeRef.current) / 1000)
-        setRecordingTime(elapsedSeconds)
-      }, 1000) // Update every second for the timer display
+      
+      // Note: The timer is now started by the useEffect that watches isRecording
     } catch (err) {
       console.error("Failed to start recording", err)
       alert("Failed to start recording")
@@ -177,11 +197,7 @@ export default function RecordScreen() {
 
       // Stop recording
       await recording.stopAndUnloadAsync()
-      if (timerRef.current) {
-        clearInterval(timerRef.current)
-        timerRef.current = null
-      }
-
+      
       // Get recording URI
       const uri = recording.getURI()
       if (!uri) {
@@ -209,7 +225,7 @@ export default function RecordScreen() {
         hasTranscript: false,
       }
 
-      // Reset states
+      // Reset states (this will trigger the useEffect to clear the timer)
       setRecording(null)
       setIsRecording(false)
       setRecordingTime(0)
@@ -348,6 +364,7 @@ const styles = StyleSheet.create({
   timer: {
     fontSize: 48,
     marginTop: 20,
+    padding: 30,
     fontWeight: "bold",
     marginVertical: 20,
     fontVariant: ["tabular-nums"],
@@ -363,7 +380,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     height: 100,
     width: width * 0.8,
-    marginVertical: 40,
     paddingHorizontal: 10,
     borderRadius: 10,
   },
@@ -384,4 +400,3 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 })
-

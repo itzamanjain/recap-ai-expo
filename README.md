@@ -1,3 +1,17 @@
+## todo
+- splash screen 
+- app logo 
+- remove dark theme 
+- fix timer still not working 
+- add auth 
+- add payement 
+- add live sync with web 
+- create build and make apk
+- change the model view to more applealing user can listen and read transcrpti and search in transcrrpit 
+
+
+'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';
+2ab46da706c36124ce96f4f0b589ee972626803f
 # Welcome to your Expo app 👋
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).

@@ -235,6 +235,8 @@ export default function HomeScreen() {
     );
   }
 
+  
+
   return (
     <ThemedView style={styles.container}>
       <View style={styles.header}>
@@ -316,30 +318,11 @@ export default function HomeScreen() {
                         />
                       )}
                     </TouchableOpacity>
-
-                    <TouchableOpacity 
-                      style={[styles.actionButton, { backgroundColor: theme === 'dark' ? Colors.dark.background : Colors.light.background }]}
-                      onPress={() => {
-                        Alert.alert(
-                          'Delete Meeting',
-                          'Are you sure you want to delete this recording?',
-                          [
-                            { text: 'Cancel', style: 'cancel' },
-                            { 
-                              text: 'Delete', 
-                              style: 'destructive',
-                              onPress: () => deleteMeeting(meeting.id)
-                            }
-                          ]
-                        );
-                      }}
-                    >
-                      <Ionicons 
-                        name="trash-outline" 
-                        size={20} 
-                        color="#FF3B30" 
-                      />
-                    </TouchableOpacity>
+                      
+                    { /* 
+                    delete button may be 
+                    */}
+                   
                   </View>
                 </View>
               </ThemedView>
@@ -429,6 +412,7 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     fontSize: 28,
+    padding:4,
     fontWeight: 'bold',
   },
   subtitle: {

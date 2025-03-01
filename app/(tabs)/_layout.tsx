@@ -7,6 +7,7 @@ import { HapticTab } from '@/components/HapticTab';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/hooks/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function TabLayout() {
   const { theme } = useTheme();
@@ -42,10 +43,9 @@ export default function TabLayout() {
         options={{
           title: 'Transcripts',
           tabBarIcon: ({ focused }) => (
-            <NotepadTextDashedIcon
-              size={28}
-              color={focused ? Colors[theme].tint : Colors[theme].tabIconDefault}
-            />
+            
+            <Ionicons name="document-text-outline" size={28} color={focused ? Colors[theme].tint : Colors[theme].tabIconDefault} />
+            
           ),
         }}
       />

@@ -10,7 +10,7 @@ interface DeepgramError {
 export const transcribeUrlDeepgram = async (fileUri: string) => {
   console.log("inside api call", fileUri);
   
-  const deepgramApiKey = "";
+  const deepgramApiKey = "2ab46da706c36124ce96f4f0b589ee972626803f";
   const apiUrl = "https://api.deepgram.com/v1/listen?smart_format=true&model=nova-2&language=en-US";
 
   try {
