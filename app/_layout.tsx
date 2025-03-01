@@ -26,21 +26,33 @@ function RootLayoutNav() {
   });
 
   useEffect(() => {
-    if (loaded && isThemeReady) {
-      SplashScreen.hideAsync().catch(() => {
-        // Ignore error if splash screen is already hidden
-      });
+    async function hideSplash() {
+      try {
+        if (loaded && isThemeReady) {
+          console.log('[Debug] Hiding splash screen - Fonts loaded:', loaded, 'Theme ready:', isThemeReady);
+          await SplashScreen.hideAsync();
+          console.log('[Debug] Splash screen hidden successfully');
+        }
+      } catch (error) {
+        console.warn('[Debug] Error hiding splash screen:', error);
+        // Try hiding again after a short delay as a fallback
+        setTimeout(async () => {
+          try {
+            await SplashScreen.hideAsync();
+            console.log('[Debug] Splash screen hidden after retry');
+          } catch (retryError) {
+            console.warn('[Debug] Failed to hide splash screen after retry:', retryError);
+          }
+        }, 1000);
+      }
     }
+
+    hideSplash();
   }, [loaded, isThemeReady]);
 
+  // Don't render anything until everything is ready
   if (!loaded || !isThemeReady) {
-    return (
-      <NavigationThemeProvider value={DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        </Stack>
-      </NavigationThemeProvider>
-    );
+    return null;
   }
 
   return (

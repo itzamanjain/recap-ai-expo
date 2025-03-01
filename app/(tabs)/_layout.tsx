@@ -49,6 +49,7 @@ export default function TabLayout() {
           ),
         }}
       />
+      {/* high light this button and little popout 3d effect */}
       <Tabs.Screen
         name="record"
         options={{
@@ -57,6 +58,9 @@ export default function TabLayout() {
             <AudioLinesIcon
               size={40}
               color="#FF6B00"
+              style={{
+                
+              }}
             />
           ),
         }}
