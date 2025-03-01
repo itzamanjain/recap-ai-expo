@@ -22,6 +22,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Meeting, RootStackParamList } from '../types/navigation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { transcribeUrlDeepgram } from '@/lib/transcribe';
+import { Edit, Edit2Icon, PenIcon, PenTool } from 'lucide-react-native';
 
 const MEETINGS_STORAGE_KEY = '@recap_ai_meetings';
 
@@ -279,7 +280,7 @@ export default function HomeScreen() {
                     style={styles.meetingInfo}
                     onPress={() => handleEditTitle(meeting)}
                   >
-                    <ThemedText style={styles.meetingTitle}>{meeting.title}</ThemedText>
+                    <ThemedText style={styles.meetingTitle}>{meeting.title} <Edit size={11} color={theme === 'dark' ? Colors.dark.text : Colors.light.text} /></ThemedText>
                     <ThemedText style={styles.meetingTime}>{meeting.timestamp}</ThemedText>
                     <ThemedText style={styles.duration}>Duration: {formatTime(meeting.duration)}</ThemedText>
                     {meeting.hasTranscript && (
@@ -330,28 +331,6 @@ export default function HomeScreen() {
           )}
         </ScrollView>
       </View>
-
-      <ThemedView 
-        style={styles.recordingCard}
-        lightColor="#FF6B00"
-        darkColor="#FF6B00"
-      >
-        <ThemedText style={styles.recordingTitle}>
-          Start a new meeting now!
-        </ThemedText>
-        <ThemedText style={styles.recordingDescription}>
-          Capture your thoughts and conversations effortlessly.
-        </ThemedText>
-        
-        <TouchableOpacity 
-          style={styles.recordButton}
-          onPress={startRecording}
-        >
-          <ThemedText style={styles.recordButtonText}>
-            Start Recording
-          </ThemedText>
-        </TouchableOpacity>
-      </ThemedView>
 
       {/* Edit Title Modal */}
       <Modal

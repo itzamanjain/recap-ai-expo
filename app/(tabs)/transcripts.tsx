@@ -156,11 +156,11 @@ export default function TranscriptPage() {
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <View
-          style={[styles.searchInputContainer, { backgroundColor: isDark ? Colors.dark.cardBackground : "#FFF5EB" }]}
+          style={[styles.searchInputContainer]}
         >
           <Ionicons name="search" size={20} color={isDark ? "#777777" : "#999999"} style={styles.searchIcon} />
           <TextInput
-            style={[styles.searchInput, { color: isDark ? "#FFFFFF" : "#000000" }]}
+            style={[styles.searchInput]}
             placeholder="Search transcripts..."
             placeholderTextColor={isDark ? "#777777" : "#999999"}
             value={searchQuery}
@@ -325,6 +325,7 @@ const styles = StyleSheet.create({
   searchInputContainer: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor:'#FFF5EB',
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -334,6 +335,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
+    color:'black',
     fontSize: 16,
     padding: 0,
   },
