@@ -7,21 +7,20 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "platforms": ["android", "ios"],
-      "workflow": "managed"
+      "android": {
+        "buildType": "apk"
+      }
     },
     "preview": {
       "distribution": "internal",
-      "platforms": ["android", "ios"],
-      "workflow": "managed"
+      "android": {
+        "buildType": "apk"
+      }
     },
     "production": {
       "autoIncrement": true,
-      "releaseChannel": "production",
-      "platforms": ["android", "ios"],
-      "workflow": "managed",
       "android": {
-        "buildType": "apk" 
+        "buildType": "apk"
       }
     }
   },
