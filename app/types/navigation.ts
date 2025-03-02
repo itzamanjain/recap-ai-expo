@@ -1,3 +1,4 @@
+// navigation.ts
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 export interface UserProfile {
@@ -37,3 +38,6 @@ declare global {
     interface RootParamList extends RootStackParamList {}
   }
 }
+
+// Dummy default export to silence the warning
+export default {};

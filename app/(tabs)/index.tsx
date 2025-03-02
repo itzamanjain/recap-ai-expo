@@ -138,27 +138,27 @@ export default function HomeScreen() {
     }
   };
 
-  const deleteMeeting = async (meetingId: string) => {
-    try {
-      if (playingId === meetingId && sound) {
-        await sound.unloadAsync();
-        setPlayingId(null);
-        setSound(null);
-      }
+  // const deleteMeeting = async (meetingId: string) => {
+  //   try {
+  //     if (playingId === meetingId && sound) {
+  //       await sound.unloadAsync();
+  //       setPlayingId(null);
+  //       setSound(null);
+  //     }
 
-      const updatedMeetings = meetings.filter(meeting => meeting.id !== meetingId);
-      setMeetings(updatedMeetings);
-      await AsyncStorage.setItem(MEETINGS_STORAGE_KEY, JSON.stringify(updatedMeetings));
+  //     const updatedMeetings = meetings.filter(meeting => meeting.id !== meetingId);
+  //     setMeetings(updatedMeetings);
+  //     await AsyncStorage.setItem(MEETINGS_STORAGE_KEY, JSON.stringify(updatedMeetings));
 
-      const meeting = meetings.find(m => m.id === meetingId);
-      if (meeting?.uri) {
-        await FileSystem.deleteAsync(meeting.uri);
-      }
-    } catch (error) {
-      console.error('Failed to delete meeting:', error);
-      Alert.alert('Error', 'Failed to delete meeting');
-    }
-  };
+  //     const meeting = meetings.find(m => m.id === meetingId);
+  //     if (meeting?.uri) {
+  //       await FileSystem.deleteAsync(meeting.uri);
+  //     }
+  //   } catch (error) {
+  //     console.error('Failed to delete meeting:', error);
+  //     Alert.alert('Error', 'Failed to delete meeting');
+  //   }
+  // };
 
   const startRecording = () => {
     navigation.navigate('(tabs)', { screen: 'record' });

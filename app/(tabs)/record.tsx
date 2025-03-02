@@ -11,7 +11,6 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import type { RootStackParamList, Meeting } from "../types/navigation"
 import { ThemedView } from "../../components/ThemedView"
 import { ThemedText } from "../../components/ThemedText"
-import { Colors } from "../../constants/Colors"
 import Reanimated from "react-native-reanimated"
 
 // Get screen dimensions
