@@ -1,17 +1,10 @@
 import React from 'react';
-import { StyleSheet, View, Text, Image, TouchableOpacity, Switch, ScrollView } from 'react-native';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { useTheme } from '@/hooks/ThemeContext';
-import { Colors } from '@/constants/Colors';
+import { StyleSheet, View, Text, Switch, ScrollView } from 'react-native';
 
 export default function ProfileScreen() {
-  const { theme, toggleTheme } = useTheme();
   return (
-    <ThemedView style={styles.container}>
+    <View style={styles.container}>
       <ScrollView>
-        {/* Header */}
-     
         {/* Profile Info */}
         <View style={styles.profileSection}>
           <View style={styles.profileImageContainer}>
@@ -19,34 +12,19 @@ export default function ProfileScreen() {
               <Text style={styles.profileImageIcon}>👤</Text>
             </View>
           </View>
-          <ThemedText style={styles.userName}>John Doe</ThemedText>
-          <ThemedText style={styles.userPlan}>Premium Plan</ThemedText>
+          <Text style={styles.userName}>John Doe</Text>
+          <Text style={styles.userPlan}>Premium Plan</Text>
           <View style={styles.proUserBadge}>
-            <ThemedText style={styles.proUserText}>Pro User</ThemedText>
+            <Text style={styles.proUserText}>Pro User</Text>
           </View>
         </View>
 
         {/* App Preferences */}
-        <ThemedView 
-          style={styles.preferencesCard}
-          lightColor={Colors.light.cardBackground}
-          darkColor={Colors.dark.cardBackground}
-        >
-          <ThemedText style={styles.cardTitle}>App Preferences</ThemedText>
+        <View style={styles.preferencesCard}>
+          <Text style={styles.cardTitle}>App Preferences</Text>
           
           <View style={styles.preferenceItem}>
-            <ThemedText style={styles.preferenceText}>Dark Mode</ThemedText>
-            <Switch
-              trackColor={{ false: '#e0e0e0', true: '#FF6B00' }}
-              thumbColor="#FFFFFF"
-              ios_backgroundColor="#e0e0e0"
-              value={theme === 'dark'}
-              onValueChange={toggleTheme}
-            />
-          </View>
-          
-          <View style={styles.preferenceItem}>
-            <ThemedText style={styles.preferenceText}>Notifications</ThemedText>
+            <Text style={styles.preferenceText}>Notifications</Text>
             <Switch
               trackColor={{ false: '#e0e0e0', true: '#FF6B00' }}
               thumbColor="#FFFFFF"
@@ -56,7 +34,7 @@ export default function ProfileScreen() {
           </View>
           
           <View style={styles.preferenceItem}>
-            <ThemedText style={styles.preferenceText}>Auto-transcribe</ThemedText>
+            <Text style={styles.preferenceText}>Auto-transcribe</Text>
             <Switch
               trackColor={{ false: '#e0e0e0', true: '#FF6B00' }}
               thumbColor="#FFFFFF"
@@ -64,67 +42,48 @@ export default function ProfileScreen() {
               value={true}
             />
           </View>
-        </ThemedView>
+        </View>
 
         {/* Account Stats */}
-        <ThemedView 
-          style={styles.statsCard}
-          lightColor={Colors.light.cardBackground}
-          darkColor={Colors.dark.cardBackground}
-        >
-          <ThemedText style={styles.cardTitle}>Account Stats</ThemedText>
+        <View style={styles.statsCard}>
+          <Text style={styles.cardTitle}>Account Stats</Text>
           
           <View style={styles.statsGrid}>
-            <ThemedView 
-              style={styles.statItem}
-              lightColor={Colors.light.background}
-              darkColor={Colors.dark.background}
-            >
-              <ThemedText style={styles.statNumber}>12</ThemedText>
-              <ThemedText style={styles.statLabel}>Recordings</ThemedText>
-            </ThemedView>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>12</Text>
+              <Text style={styles.statLabel}>Recordings</Text>
+            </View>
             
-            <ThemedView 
-              style={styles.statItem}
-              lightColor={Colors.light.background}
-              darkColor={Colors.dark.background}
-            >
-              <ThemedText style={styles.statNumber}>8</ThemedText>
-              <ThemedText style={styles.statLabel}>Transcripts</ThemedText>
-            </ThemedView>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>8</Text>
+              <Text style={styles.statLabel}>Transcripts</Text>
+            </View>
             
-            <ThemedView 
-              style={styles.statItem}
-              lightColor={Colors.light.background}
-              darkColor={Colors.dark.background}
-            >
-              <ThemedText style={styles.statNumber}>4.2</ThemedText>
-              <ThemedText style={styles.statLabel}>Hours Saved</ThemedText>
-            </ThemedView>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>4.2</Text>
+              <Text style={styles.statLabel}>Hours Saved</Text>
+            </View>
             
-            <ThemedView 
-              style={styles.statItem}
-              lightColor={Colors.light.background}
-              darkColor={Colors.dark.background}
-            >
-              <ThemedText style={styles.statNumber}>24</ThemedText>
-              <ThemedText style={styles.statLabel}>AI Queries</ThemedText>
-            </ThemedView>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>24</Text>
+              <Text style={styles.statLabel}>AI Queries</Text>
+            </View>
           </View>
-        </ThemedView>
+        </View>
       </ScrollView>
-     
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F5F5F5',
   },
   profileSection: {
     alignItems: 'center',
     paddingVertical: 20,
+    backgroundColor: '#FFFFFF',
   },
   profileImageContainer: {
     marginBottom: 12,
@@ -145,10 +104,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 4,
+    color: '#333333',
   },
   userPlan: {
     fontSize: 16,
     marginBottom: 8,
+    color: '#666666',
   },
   proUserBadge: {
     backgroundColor: 'rgba(255, 107, 0, 0.2)',
@@ -165,11 +126,21 @@ const styles = StyleSheet.create({
     margin: 16,
     padding: 16,
     borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   cardTitle: {
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 16,
+    color: '#333333',
   },
   preferenceItem: {
     flexDirection: 'row',
@@ -179,12 +150,22 @@ const styles = StyleSheet.create({
   },
   preferenceText: {
     fontSize: 16,
+    color: '#333333',
   },
   statsCard: {
     margin: 16,
     marginTop: 0,
     padding: 16,
     borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -197,39 +178,16 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     alignItems: 'center',
+    backgroundColor: '#F5F5F5',
   },
   statNumber: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 4,
+    color: '#333333',
   },
   statLabel: {
     fontSize: 14,
-  },
-  fabContainer: {
-    position: 'absolute',
-    right: 20,
-    bottom: 20,
-  },
-  fab: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#FF6B00',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#FF6B00',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 8,
-  },
-  fabIcon: {
-    fontSize: 24,
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-  },
+    color: '#666666',
+  }
 });

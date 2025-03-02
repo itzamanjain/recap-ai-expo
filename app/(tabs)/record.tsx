@@ -9,18 +9,19 @@ import { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reani
 import { useNavigation } from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import type { RootStackParamList, Meeting } from "../types/navigation"
-import { ThemedView } from "@/components/ThemedView"
-import { ThemedText } from "@/components/ThemedText"
-import { useTheme } from "@/hooks/ThemeContext"
+import { ThemedView } from "../../components/ThemedView"
+import { ThemedText } from "../../components/ThemedText"
+import { Colors } from "../../constants/Colors"
 import Reanimated from "react-native-reanimated"
 
 // Get screen dimensions
 const { width } = Dimensions.get("window")
 
+// Define tint color constant
+const TINT_COLOR = '#FF6B00';
+
 export default function RecordScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
-  const { theme } = useTheme()
-  const isDark = theme === "dark"
 
   // Recording states
   const [recording, setRecording] = useState<Audio.Recording | null>(null)
@@ -47,7 +48,6 @@ export default function RecordScreen() {
 
     if (isRecording) {
       animationInterval = setInterval(() => {
-        // This will trigger the useAnimatedStyle to recalculate with new random heights
         bars.forEach((bar) => {
           bar.height.value = 20 + Math.random() * 60
         })
@@ -64,26 +64,22 @@ export default function RecordScreen() {
   // Effect to manage recording timer
   useEffect(() => {
     if (isRecording) {
-      // Clear any existing interval
       if (timerRef.current) {
         clearInterval(timerRef.current)
       }
       
-      // Start the timer
       startTimeRef.current = Date.now()
       timerRef.current = setInterval(() => {
         const elapsedSeconds = Math.floor((Date.now() - startTimeRef.current) / 1000)
         setRecordingTime(elapsedSeconds)
       }, 1000)
     } else {
-      // Clear interval when not recording
       if (timerRef.current) {
         clearInterval(timerRef.current)
         timerRef.current = null
       }
     }
 
-    // Cleanup on effect cleanup
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current)
@@ -94,9 +90,7 @@ export default function RecordScreen() {
 
   // Format time for display (MM:SS)
   const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60)
-      .toString()
-      .padStart(2, "0")
+    const mins = Math.floor(seconds / 60).toString().padStart(2, "0")
     const secs = (seconds % 60).toString().padStart(2, "0")
     return `${mins}:${secs}`
   }
@@ -133,21 +127,18 @@ export default function RecordScreen() {
   // Start recording function
   const startRecording = async () => {
     try {
-      // Request permissions
       const { status } = await Audio.requestPermissionsAsync()
       if (status !== "granted") {
         alert("Permission to access microphone is required!")
         return
       }
 
-      // Set audio mode
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
         staysActiveInBackground: true,
       })
 
-      // Create recording object
       const newRecording = new Audio.Recording()
       await newRecording.prepareToRecordAsync({
         isMeteringEnabled: true,
@@ -182,8 +173,6 @@ export default function RecordScreen() {
       setIsRecording(true)
       setRecordingTime(0)
       setShowStartButton(false)
-      
-      // Note: The timer is now started by the useEffect that watches isRecording
     } catch (err) {
       console.error("Failed to start recording", err)
       alert("Failed to start recording")
@@ -195,27 +184,22 @@ export default function RecordScreen() {
     try {
       if (!recording) return
 
-      // Stop recording
       await recording.stopAndUnloadAsync()
       
-      // Get recording URI
       const uri = recording.getURI()
       if (!uri) {
         throw new Error("Failed to get recording URI")
       }
 
-      // Create a unique filename with timestamp
       const timestamp = new Date()
       const fileName = `recording-${timestamp.getTime()}.wav`
       const newUri = `${FileSystem.documentDirectory}${fileName}`
 
-      // Save recording to app's document directory
       await FileSystem.moveAsync({
         from: uri,
         to: newUri,
       })
 
-      // Create meeting object
       const newMeeting: Meeting = {
         id: timestamp.getTime().toString(),
         title: `Meeting ${timestamp.toLocaleTimeString()}`,
@@ -225,13 +209,11 @@ export default function RecordScreen() {
         hasTranscript: false,
       }
 
-      // Reset states (this will trigger the useEffect to clear the timer)
       setRecording(null)
       setIsRecording(false)
       setRecordingTime(0)
       setShowStartButton(true)
 
-      // Navigate back to home and pass the new meeting
       navigation.navigate("(tabs)", {
         screen: "index",
         params: { newMeeting },
@@ -284,7 +266,7 @@ export default function RecordScreen() {
           damping: 10,
           stiffness: 80,
         }),
-        backgroundColor: isDark ? "#FF5722" : "#FF6B00",
+        backgroundColor: TINT_COLOR,
       }
     })
     return animatedStyle
@@ -292,7 +274,7 @@ export default function RecordScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar style={isDark ? "light" : "dark"} />
+      <StatusBar style="light" />
 
       <View style={styles.recordingContainer}>
         <ThemedText style={styles.title}>{isRecording ? "Recording in Progress" : "Ready to Record"}</ThemedText>
@@ -302,7 +284,7 @@ export default function RecordScreen() {
             style={[
               styles.countdown,
               {
-                color: isDark ? "#FFFFFF" : "#000000",
+                color: '#11181C',
                 transform: [{ scale: countdownAnimation }],
               },
             ]}
@@ -313,14 +295,8 @@ export default function RecordScreen() {
           isRecording && <ThemedText style={styles.timer}>{formatTime(recordingTime)}</ThemedText>
         )}
 
-        {/* Animated waveform visualization */}
         {isRecording && (
-          <View
-            style={[
-              styles.waveformContainer,
-              { backgroundColor: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)" },
-            ]}
-          >
+          <View style={[styles.waveformContainer, { backgroundColor: "rgba(0, 0, 0, 0.05)" }]}>
             {bars.map((bar, index) => (
               <Reanimated.View key={bar.id} style={[styles.bar, animatedBarStyles[index]]} />
             ))}
@@ -329,7 +305,7 @@ export default function RecordScreen() {
 
         {showStartButton ? (
           <TouchableOpacity
-            style={[styles.button, { backgroundColor: isDark ? "#FF5722" : "#FF6B00" }]}
+            style={[styles.button, { backgroundColor: TINT_COLOR }]}
             onPress={startCountdown}
           >
             <Text style={styles.buttonText}>Start Recording</Text>

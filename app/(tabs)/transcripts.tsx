@@ -8,15 +8,13 @@ import {
   ScrollView,
   TextInput,
   Modal,
-  useColorScheme,
   RefreshControl,
   Alert,
 } from "react-native"
 import * as Clipboard from "expo-clipboard"
-import { ThemedText } from "@/components/ThemedText"
-import { ThemedView } from "@/components/ThemedView"
-import { Colors } from "@/constants/Colors"
-import { useTheme } from "@/hooks/ThemeContext"
+import { ThemedText } from "../../components/ThemedText"
+import { ThemedView } from "../../components/ThemedView"
+import { Colors } from "../../constants/Colors"
 import type { Meeting } from "@/app/types/navigation"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useRoute, useFocusEffect } from "@react-navigation/native"
@@ -26,9 +24,6 @@ import { generateSummary } from "../../lib/summurize"
 const MEETINGS_STORAGE_KEY = "@recap_ai_meetings"
 
 export default function TranscriptPage() {
-  const colorScheme = useColorScheme()
-  const isDark = colorScheme === "dark"
-  const { theme } = useTheme()
   const route = useRoute()
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null)
@@ -39,22 +34,18 @@ export default function TranscriptPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [loadingSummury, setLoadingSummury] = useState(false)
 
-  // Load meetings when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
       loadMeetings()
     }, []),
   )
 
-  // Handle meetingId from navigation params
   useEffect(() => {
     const params = route.params as { meetingId?: string }
     if (params?.meetingId) {
       const meeting = meetings.find((m) => m.id === params.meetingId)
       if (meeting?.transcript) {
         setSelectedMeeting(meeting)
-        // Don't automatically open the modal
-        // setModalVisible(true); - Remove this line
       }
     }
   }, [route.params, meetings])
@@ -64,7 +55,6 @@ export default function TranscriptPage() {
       const storedMeetings = await AsyncStorage.getItem(MEETINGS_STORAGE_KEY)
       if (storedMeetings) {
         const allMeetings = JSON.parse(storedMeetings)
-        // Only show meetings that have transcripts
         const meetingsWithTranscripts = allMeetings.filter((m: Meeting) => m.hasTranscript && m.transcript)
         console.log("Meetings with transcripts:", meetingsWithTranscripts.length)
         setMeetings(meetingsWithTranscripts)
@@ -81,7 +71,6 @@ export default function TranscriptPage() {
     if (!transcript) return
 
     try {
-      // Close transcript modal if it's open
       setModalVisible(false)
       setLoadingSummury(true)
 
@@ -89,12 +78,10 @@ export default function TranscriptPage() {
       setCurrentSummary(res)
       setSummaryModalVisible(true)
 
-      // Update meeting with summary in state and storage
       const updatedMeeting = { ...meeting, summary: res }
       const updatedMeetings = meetings.map((m) => (m.id === meeting.id ? updatedMeeting : m))
       setMeetings(updatedMeetings)
 
-      // Save to AsyncStorage
       const storedMeetings = await AsyncStorage.getItem(MEETINGS_STORAGE_KEY)
       if (storedMeetings) {
         const allMeetings = JSON.parse(storedMeetings)
@@ -103,14 +90,13 @@ export default function TranscriptPage() {
       }
     } catch (error) {
       console.error("Failed to generate summary:", error)
-    }finally{
+    } finally {
       setLoadingSummury(false)
     }
   }
 
   const closeSummaryModal = () => {
     setSummaryModalVisible(false)
-    // Only reset current summary when closing summary modal
     setCurrentSummary("")
   }
 
@@ -121,12 +107,8 @@ export default function TranscriptPage() {
 
   const formatTime = (seconds: number): string => {
     if (!seconds || seconds <= 0) return "00:00"
-    const mins = Math.floor(seconds / 60)
-      .toString()
-      .padStart(2, "0")
-    const secs = Math.floor(seconds % 60)
-      .toString()
-      .padStart(2, "0")
+    const mins = Math.floor(seconds / 60).toString().padStart(2, "0")
+    const secs = Math.floor(seconds % 60).toString().padStart(2, "0")
     return `${mins}:${secs}`
   }
 
@@ -143,7 +125,6 @@ export default function TranscriptPage() {
 
   const closeModal = () => {
     setModalVisible(false)
-    // Don't reset selectedMeeting here as it might be needed for the summary
   }
 
   return (
@@ -152,42 +133,38 @@ export default function TranscriptPage() {
         <ThemedText style={styles.headerTitle}>Transcripts</ThemedText>
       </View>
 
-      {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <View
-          style={[styles.searchInputContainer]}
-        >
-          <Ionicons name="search" size={20} color={isDark ? "#777777" : "#999999"} style={styles.searchIcon} />
+        <View style={styles.searchInputContainer}>
+          <Ionicons name="search" size={20} color={Colors.icon} style={styles.searchIcon} />
           <TextInput
-            style={[styles.searchInput]}
+            style={styles.searchInput}
             placeholder="Search transcripts..."
-            placeholderTextColor={isDark ? "#777777" : "#999999"}
+            placeholderTextColor={Colors.icon}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery("")}>
-              <Ionicons name="close-circle" size={20} color={isDark ? "#777777" : "#999999"} />
+              <Ionicons name="close-circle" size={20} color={Colors.icon} />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
-      {/* Transcript List */}
       <ScrollView
         style={styles.transcriptList}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#FF6B00"]}
-            tintColor={isDark ? "#FFFFFF" : "#FF6B00"}
+            colors={[Colors.tint]}
+            tintColor={Colors.tint}
           />
         }
       >
         {filteredMeetings.length === 0 ? (
           <ThemedView style={styles.emptyState}>
-            <Ionicons name="document-text-outline" size={48} color={isDark ? Colors.dark.text : Colors.light.text} />
+            <Ionicons name="document-text-outline" size={48} color={Colors.text} />
             <ThemedText style={styles.emptyStateText}>No transcripts available</ThemedText>
             <ThemedText style={styles.emptyStateSubtext}>
               Generate transcripts from your recordings in the Recent Meetings section
@@ -199,7 +176,6 @@ export default function TranscriptPage() {
               key={meeting.id}
               style={styles.transcriptCard}
               lightColor="#FFF5EB"
-              darkColor={Colors.dark.cardBackground}
             >
               <View style={styles.transcriptHeader}>
                 <View>
@@ -215,21 +191,25 @@ export default function TranscriptPage() {
 
               <View style={styles.buttonsSideBySide}>
                 <TouchableOpacity
-                  style={[styles.readFullButton, { backgroundColor: isDark ? "#FF5722" : "#FFE0CC" }]}
+                  style={[styles.readFullButton, { backgroundColor: "#FFE0CC" }]}
                   onPress={() => viewFullTranscript(meeting)}
                 >
-                  <ThemedText style={[styles.readFullText, { color: isDark ? "#FFFFFF" : "#333333" }]}>
+                  <ThemedText style={[styles.readFullText, { color: "#333333" }]}>
                     Read Full
                   </ThemedText>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[styles.readFullButton, { backgroundColor: isDark ? "#FF5722" : "#FFE0CC" }]}
+                  style={[styles.readFullButton, { backgroundColor: "#FFE0CC" }]}
                   onPress={() => viewSummury(meeting)}
                 >
-                  {loadingSummury ?  <ThemedText>loading....</ThemedText> :<ThemedText style={[styles.readFullText, { color: isDark ? "#FFFFFF" : "#333333" }]}>
-                    Read Summury
-                  </ThemedText>}
+                  {loadingSummury ? (
+                    <ThemedText>loading....</ThemedText>
+                  ) : (
+                    <ThemedText style={[styles.readFullText, { color: "#333333" }]}>
+                      Read Summary
+                    </ThemedText>
+                  )}
                 </TouchableOpacity>
               </View>
             </ThemedView>
@@ -237,10 +217,9 @@ export default function TranscriptPage() {
         )}
       </ScrollView>
 
-      {/* Full Transcript Modal */}
       <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={closeModal}>
         <View style={styles.modalOverlay}>
-          <ThemedView style={styles.modalContent} lightColor="#FFFFFF" darkColor={Colors.dark.cardBackground}>
+          <ThemedView style={styles.modalContent} lightColor="#FFFFFF">
             <View style={styles.modalHeader}>
               <View>
                 <ThemedText style={styles.modalTitle}>{selectedMeeting?.title}</ThemedText>
@@ -260,14 +239,13 @@ export default function TranscriptPage() {
         </View>
       </Modal>
 
-      {/* Summary Modal */}
       <Modal animationType="slide" transparent={true} visible={summaryModalVisible} onRequestClose={closeSummaryModal}>
         <View style={styles.modalOverlay}>
-          <ThemedView style={styles.modalContent} lightColor="#FFFFFF" darkColor={Colors.dark.cardBackground}>
+          <ThemedView style={styles.modalContent} lightColor="#FFFFFF">
             <View style={styles.modalHeader}>
               <View>
                 <ThemedText style={styles.modalTitle}>Meeting Summary</ThemedText>
-                <ThemedText style={styles.modalSubtitle}>Your meeting Summury & action Items</ThemedText>
+                <ThemedText style={styles.modalSubtitle}>Your meeting Summary & action Items</ThemedText>
               </View>
               <TouchableOpacity style={styles.closeButton} onPress={closeSummaryModal}>
                 <ThemedText style={styles.closeButtonText}>✕</ThemedText>
@@ -278,15 +256,15 @@ export default function TranscriptPage() {
               <ThemedText style={styles.fullTranscriptText}>{currentSummary}</ThemedText>
             </ScrollView>
 
-            <View style={[styles.modalFooter, { borderTopColor: isDark ? "#333333" : "#EEEEEE" }]}>
+            <View style={[styles.modalFooter, { borderTopColor: "#EEEEEE" }]}>
               <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: isDark ? "#FF5722" : "#FFE0CC" }]}
+                style={[styles.modalButton, { backgroundColor: "#FFE0CC" }]}
                 onPress={() => {
                   Clipboard.setString(currentSummary)
                   Alert.alert("Copied", "Summary copied to clipboard")
                 }}
               >
-                <ThemedText style={[styles.modalButtonText, { color: isDark ? "#FFFFFF" : "#333333" }]}>
+                <ThemedText style={[styles.modalButtonText, { color: "#333333" }]}>
                   Copy Summary
                 </ThemedText>
               </TouchableOpacity>
@@ -324,7 +302,7 @@ const styles = StyleSheet.create({
   searchInputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor:'#FFF5EB',
+    backgroundColor: "#FFF5EB",
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -334,7 +312,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    color:'black',
+    color: Colors.text,
     fontSize: 16,
     padding: 0,
   },
@@ -435,15 +413,19 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   closeButton: {
+    position: "absolute",
+    top: 0,
+    right: 0,
     padding: 4,
   },
   closeButtonText: {
     fontSize: 22,
     fontWeight: "bold",
-    opacity: 0.7,
+    opacity: 0.6,
   },
   modalBody: {
-    maxHeight: "90%",
+    marginBottom: 16,
+    maxHeight: "70%",
   },
   fullTranscriptText: {
     fontSize: 16,
@@ -452,18 +434,18 @@ const styles = StyleSheet.create({
   modalFooter: {
     flexDirection: "row",
     justifyContent: "flex-end",
+    borderTopWidth: 1,
     paddingTop: 16,
-    marginTop: 16,
   },
   modalButton: {
+    backgroundColor: Colors.tint,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 20,
     marginLeft: 12,
   },
   modalButtonText: {
-    fontSize: 14,
+    color: "#FFFFFF",
     fontWeight: "500",
   },
 })
-

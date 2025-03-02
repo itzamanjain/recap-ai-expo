@@ -1,5 +1,11 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
+export interface UserProfile {
+  name: string;
+  email: string;
+  avatar?: string;
+}
+
 export interface Meeting {
   id: string;
   title: string;

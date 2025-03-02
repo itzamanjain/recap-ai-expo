@@ -8,28 +8,28 @@ import {
   ActivityIndicator, 
   RefreshControl,
   TextInput,
-  Modal
+  Modal,
+  Image
 } from 'react-native';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '../../components/ThemedText';
+import { ThemedView } from '../../components/ThemedView';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Colors } from '@/constants/Colors';
-import { useTheme } from '@/hooks/ThemeContext';
+import { Colors } from '../../constants/Colors';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
-import { Meeting, RootStackParamList } from '../types/navigation';
+import { Meeting, RootStackParamList, UserProfile } from '../types/navigation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { transcribeUrlDeepgram } from '../../lib/transcribe';
-import { Edit } from 'lucide-react-native';
+import { Edit, User } from 'lucide-react-native';
 
 const MEETINGS_STORAGE_KEY = '@recap_ai_meetings';
+const PROFILE_STORAGE_KEY = '@recap_ai_profile';
 
 export default function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute();
-  const { theme } = useTheme();
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
@@ -38,13 +38,41 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
   const [newTitle, setNewTitle] = useState('');
+  
+  // Profile state
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editedProfile, setEditedProfile] = useState<UserProfile>({ name: '', email: '' });
 
-  // Load meetings from storage on mount and when screen comes into focus
+  // Load profile and meetings
   useFocusEffect(
     React.useCallback(() => {
+      loadProfile();
       loadMeetings();
     }, [])
   );
+
+  const loadProfile = async () => {
+    try {
+      const storedProfile = await AsyncStorage.getItem(PROFILE_STORAGE_KEY);
+      if (storedProfile) {
+        setProfile(JSON.parse(storedProfile));
+      }
+    } catch (error) {
+      console.error('Failed to load profile:', error);
+    }
+  };
+
+  const saveProfile = async (updatedProfile: UserProfile) => {
+    try {
+      await AsyncStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(updatedProfile));
+      setProfile(updatedProfile);
+      setIsEditingProfile(false);
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+      Alert.alert('Error', 'Failed to save profile');
+    }
+  };
 
   // Handle new meeting from recording screen
   useEffect(() => {
@@ -113,7 +141,6 @@ export default function HomeScreen() {
 
   const deleteMeeting = async (meetingId: string) => {
     try {
-      // Stop audio if playing
       if (playingId === meetingId && sound) {
         await sound.unloadAsync();
         setPlayingId(null);
@@ -124,7 +151,6 @@ export default function HomeScreen() {
       setMeetings(updatedMeetings);
       await AsyncStorage.setItem(MEETINGS_STORAGE_KEY, JSON.stringify(updatedMeetings));
 
-      // Delete the audio file
       const meeting = meetings.find(m => m.id === meetingId);
       if (meeting?.uri) {
         await FileSystem.deleteAsync(meeting.uri);
@@ -228,21 +254,40 @@ export default function HomeScreen() {
     }
   };
 
+  const handleEditProfile = () => {
+    if (profile) {
+      setEditedProfile(profile);
+    }
+    setIsEditingProfile(true);
+  };
+
   if (isLoading) {
     return (
       <ThemedView style={[styles.container, styles.centerContent]}>
-        <ActivityIndicator size="large" color={theme === 'dark' ? '#FFFFFF' : '#FF6B00'} />
+        <ActivityIndicator size="large" color={Colors.tint} />
       </ThemedView>
     );
   }
 
-  
-
   return (
     <ThemedView style={styles.container}>
       <View style={styles.header}>
-        <ThemedText style={styles.welcomeText}>Welcome to Recap AI</ThemedText>
-        <ThemedText style={styles.subtitle}>Your AI meeting assistant</ThemedText>
+        {profile ? (
+          <View style={styles.profileContainer}>
+            <View style={styles.profileInfo}>
+              <ThemedText style={styles.welcomeText}>Welcome, {profile.name}</ThemedText>
+              <ThemedText style={styles.subtitle}>{profile.email}</ThemedText>
+            </View>
+            <TouchableOpacity onPress={handleEditProfile} style={styles.editProfileButton}>
+              <User size={24} color={Colors.icon} />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.setupProfile} onPress={() => setIsEditingProfile(true)}>
+            <ThemedText style={styles.setupProfileText}>Set up your profile</ThemedText>
+            <User size={24} color={Colors.icon} />
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.sectionContainer}>
@@ -254,14 +299,14 @@ export default function HomeScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={['#FF6B00']}
-              tintColor={theme === 'dark' ? '#FFFFFF' : '#FF6B00'}
+              colors={[Colors.tint]}
+              tintColor={Colors.tint}
             />
           }
         >
           {meetings.length === 0 ? (
             <ThemedView style={styles.emptyState}>
-              <Ionicons name="mic-outline" size={48} color={theme === 'dark' ? Colors.dark.text : Colors.light.text} />
+              <Ionicons name="mic-outline" size={48} color={Colors.text} />
               <ThemedText style={styles.emptyStateText}>No recordings yet</ThemedText>
               <ThemedText style={styles.emptyStateSubtext}>
                 Start recording your first meeting!
@@ -272,15 +317,16 @@ export default function HomeScreen() {
               <ThemedView
                 key={meeting.id}
                 style={styles.meetingCard}
-                lightColor={Colors.light.cardBackground}
-                darkColor={Colors.dark.cardBackground}
+                lightColor={Colors.cardBackground}
               >
                 <View style={styles.meetingCardContent}>
                   <TouchableOpacity 
                     style={styles.meetingInfo}
                     onPress={() => handleEditTitle(meeting)}
                   >
-                    <ThemedText style={styles.meetingTitle}>{meeting.title} <Edit size={11} color={theme === 'dark' ? Colors.dark.text : Colors.light.text} /></ThemedText>
+                    <ThemedText style={styles.meetingTitle}>
+                      {meeting.title} <Edit size={11} color={Colors.text} />
+                    </ThemedText>
                     <ThemedText style={styles.meetingTime}>{meeting.timestamp}</ThemedText>
                     <ThemedText style={styles.duration}>Duration: {formatTime(meeting.duration)}</ThemedText>
                     {meeting.hasTranscript && (
@@ -290,40 +336,35 @@ export default function HomeScreen() {
                   
                   <View style={styles.meetingActions}>
                     <TouchableOpacity 
-                      style={[styles.actionButton, { backgroundColor: theme === 'dark' ? Colors.dark.background : Colors.light.background }]}
+                      style={[styles.actionButton, { backgroundColor: Colors.background }]}
                       onPress={() => playAudio(meeting)}
                     >
                       <Ionicons 
                         name={playingId === meeting.id ? "stop" : "play"} 
                         size={20} 
-                        color={theme === 'dark' ? Colors.dark.text : Colors.light.text} 
+                        color={Colors.text}
                       />
                     </TouchableOpacity>
                     
                     <TouchableOpacity 
                       style={[
                         styles.actionButton, 
-                        { backgroundColor: theme === 'dark' ? Colors.dark.background : Colors.light.background },
+                        { backgroundColor: Colors.background },
                         transcribingId === meeting.id && styles.disabledButton
                       ]}
                       onPress={() => viewTranscript(meeting)}
                       disabled={transcribingId === meeting.id}
                     >
                       {transcribingId === meeting.id ? (
-                        <ActivityIndicator size="small" color={theme === 'dark' ? Colors.dark.text : Colors.light.text} />
+                        <ActivityIndicator size="small" color={Colors.text} />
                       ) : (
                         <Ionicons 
                           name="document-text-outline" 
                           size={20} 
-                          color={theme === 'dark' ? Colors.dark.text : Colors.light.text} 
+                          color={Colors.text}
                         />
                       )}
                     </TouchableOpacity>
-                      
-                    { /* 
-                    delete button may be 
-                    */}
-                   
                   </View>
                 </View>
               </ThemedView>
@@ -346,14 +387,14 @@ export default function HomeScreen() {
               style={[
                 styles.titleInput,
                 { 
-                  color: theme === 'dark' ? '#FFFFFF' : '#000000',
-                  borderColor: theme === 'dark' ? '#333333' : '#DDDDDD'
+                  color: Colors.text,
+                  borderColor: Colors.cardBackground
                 }
               ]}
               value={newTitle}
               onChangeText={setNewTitle}
               placeholder="Enter new title"
-              placeholderTextColor={theme === 'dark' ? '#777777' : '#999999'}
+              placeholderTextColor={Colors.icon}
             />
             <View style={styles.modalButtons}>
               <TouchableOpacity 
@@ -365,6 +406,52 @@ export default function HomeScreen() {
               <TouchableOpacity 
                 style={[styles.modalButton, styles.saveButton]}
                 onPress={saveTitle}
+              >
+                <ThemedText style={styles.saveButtonText}>Save</ThemedText>
+              </TouchableOpacity>
+            </View>
+          </ThemedView>
+        </View>
+      </Modal>
+
+      {/* Edit Profile Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={isEditingProfile}
+        onRequestClose={() => setIsEditingProfile(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <ThemedView style={styles.modalContent}>
+            <ThemedText style={styles.modalTitle}>
+              {profile ? 'Edit Profile' : 'Set Up Profile'}
+            </ThemedText>
+            <TextInput
+              style={[styles.titleInput, { color: Colors.text, borderColor: Colors.cardBackground }]}
+              value={editedProfile.name}
+              onChangeText={(text) => setEditedProfile({ ...editedProfile, name: text })}
+              placeholder="Your Name"
+              placeholderTextColor={Colors.icon}
+            />
+            <TextInput
+              style={[styles.titleInput, { color: Colors.text, borderColor: Colors.cardBackground }]}
+              value={editedProfile.email}
+              onChangeText={(text) => setEditedProfile({ ...editedProfile, email: text })}
+              placeholder="Your Email"
+              placeholderTextColor={Colors.icon}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setIsEditingProfile(false)}
+              >
+                <ThemedText style={styles.modalButtonText}>Cancel</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.saveButton]}
+                onPress={() => saveProfile(editedProfile)}
               >
                 <ThemedText style={styles.saveButtonText}>Save</ThemedText>
               </TouchableOpacity>
@@ -389,9 +476,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
+  profileContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  setupProfile: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    backgroundColor: Colors.cardBackground,
+    borderRadius: 12,
+  },
+  setupProfileText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  editProfileButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: Colors.cardBackground,
+  },
   welcomeText: {
     fontSize: 28,
-    padding:4,
+    padding: 4,
     fontWeight: 'bold',
   },
   subtitle: {
@@ -475,35 +587,6 @@ const styles = StyleSheet.create({
   disabledButton: {
     opacity: 0.5,
   },
-  recordingCard: {
-    borderRadius: 16,
-    padding: 20,
-    margin: 20,
-  },
-  recordingTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 8,
-  },
-  recordingDescription: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    opacity: 0.9,
-    marginBottom: 20,
-  },
-  recordButton: {
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 24,
-    alignSelf: 'flex-start',
-  },
-  recordButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FF6B00',
-  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -541,7 +624,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   saveButton: {
-    backgroundColor: '#FF6B00',
+    backgroundColor: Colors.tint,
   },
   modalButtonText: {
     fontSize: 16,

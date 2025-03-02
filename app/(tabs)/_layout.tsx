@@ -2,20 +2,18 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform } from 'react-native';
 import { AudioLinesIcon, HomeIcon, NotebookTabsIcon, NotepadTextDashedIcon, UserCircle } from 'lucide-react-native';
-
-import { HapticTab } from '@/components/HapticTab';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useTheme } from '@/hooks/ThemeContext';
+import { HapticTab } from '../../components/HapticTab';
+import TabBarBackground from '../../components/ui/TabBarBackground';
+import { Colors } from '../../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 
-export default function TabLayout() {
-  const { theme } = useTheme();
+const TINT_COLOR = '#FF6B00';
 
+export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[theme].tint,
+        tabBarActiveTintColor: Colors.tint,
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
@@ -33,7 +31,7 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => (
             <HomeIcon
               size={28}
-              color={focused ? Colors[theme].tint : Colors[theme].tabIconDefault}
+              color={focused ? Colors.tint : Colors.tabIconDefault}
             />
           ),
         }}
@@ -43,13 +41,14 @@ export default function TabLayout() {
         options={{
           title: 'Transcripts',
           tabBarIcon: ({ focused }) => (
-            
-            <Ionicons name="document-text-outline" size={28} color={focused ? Colors[theme].tint : Colors[theme].tabIconDefault} />
-            
+            <Ionicons 
+              name="document-text-outline" 
+              size={28} 
+              color={focused ? Colors.tint : Colors.tabIconDefault} 
+            />
           ),
         }}
       />
-      {/* high light this button and little popout 3d effect */}
       <Tabs.Screen
         name="record"
         options={{
@@ -57,10 +56,7 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => (
             <AudioLinesIcon
               size={40}
-              color="#FF6B00"
-              style={{
-                
-              }}
+              color={TINT_COLOR}
             />
           ),
         }}
@@ -72,7 +68,7 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => (
             <NotebookTabsIcon
               size={28}
-              color={focused ? Colors[theme].tint : Colors[theme].tabIconDefault}
+              color={focused ? Colors.tint : Colors.tabIconDefault}
             />
           ),
         }}
@@ -84,7 +80,7 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => (
             <UserCircle
               size={28}
-              color={focused ? Colors[theme].tint : Colors[theme].tabIconDefault}
+              color={focused ? Colors.tint : Colors.tabIconDefault}
             />
           ),
         }}

@@ -1,59 +1,19 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useThemeManager } from './useThemeManager';
+import React, { createContext, useContext } from 'react';
 
 type ThemeContextType = {
-  theme: 'light' | 'dark';
+  theme: 'light';
   isThemeReady: boolean;
-  toggleTheme: () => void;
 };
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [isThemeReady, setIsThemeReady] = useState(false);
-  const { setThemePreference, getThemePreference } = useThemeManager();
-
-  useEffect(() => {
-    const THEME_LOAD_TIMEOUT = 3000; // 3 seconds timeout
-    
-    const timeoutId = setTimeout(() => {
-      // If theme loading takes too long, fallback to default
-      console.warn('Theme loading timed out, falling back to default theme');
-      setIsThemeReady(true);
-    }, THEME_LOAD_TIMEOUT);
-
-    const loadTheme = async () => {
-      try {
-        const savedTheme = await Promise.race([
-          getThemePreference(),
-          new Promise<'light' | 'dark'>((_, reject) =>
-            setTimeout(() => reject(new Error('Theme loading timeout')), THEME_LOAD_TIMEOUT)
-          )
-        ]);
-        setTheme(savedTheme);
-      } catch (error) {
-        console.warn('Error loading theme:', error);
-        // Keep default theme
-      } finally {
-        setIsThemeReady(true);
-        clearTimeout(timeoutId);
-      }
-    };
-
-    loadTheme();
-
-    return () => clearTimeout(timeoutId);
-  }, [getThemePreference]);
-
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    setThemePreference(newTheme === 'dark');
-  };
+  // Always use light theme
+  const theme = 'light';
+  const isThemeReady = true;
 
   return (
-    <ThemeContext.Provider value={{ theme, isThemeReady, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, isThemeReady }}>
       {children}
     </ThemeContext.Provider>
   );

@@ -1,20 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, TouchableOpacity, Modal, ScrollView, Share as RNShare, Alert } from 'react-native';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { Colors } from '@/constants/Colors';
-import { useTheme } from '@/hooks/ThemeContext';
-import { Meeting } from '@/app/types/navigation';
+import { ThemedText } from '../../components/ThemedText';
+import { ThemedView } from '../../components/ThemedView';
+import { Colors } from '../../constants/Colors';
+import { Meeting } from '../types/navigation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
 
 const MEETINGS_STORAGE_KEY = '@recap_ai_meetings';
+const TINT_COLOR = '#FF6B00';
 
 export default function SummariesScreen() {
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
-  const { theme } = useTheme();
 
   useEffect(() => {
     loadMeetings();
@@ -25,7 +24,6 @@ export default function SummariesScreen() {
       const storedMeetings = await AsyncStorage.getItem(MEETINGS_STORAGE_KEY);
       if (storedMeetings) {
         const allMeetings = JSON.parse(storedMeetings);
-        // Only show meetings that have summaries
         const meetingsWithSummaries = allMeetings.filter((m: Meeting) => m.summary);
         setMeetings(meetingsWithSummaries);
       }
@@ -78,8 +76,7 @@ export default function SummariesScreen() {
             <ThemedView
               key={meeting.id}
               style={styles.transcriptCard}
-              lightColor={Colors.light.cardBackground}
-              darkColor={Colors.dark.cardBackground}
+              lightColor={Colors.cardBackground}
             >
               <ThemedText style={styles.transcriptTitle}>{meeting.title}</ThemedText>
               <ThemedText style={styles.transcriptTimestamp}>{meeting.timestamp}</ThemedText>
@@ -89,21 +86,21 @@ export default function SummariesScreen() {
               
               <View style={styles.buttonContainer}>
                 <TouchableOpacity
-                  style={[styles.actionButton, { backgroundColor: theme === 'dark' ? Colors.dark.background : Colors.light.background }]}
+                  style={[styles.actionButton, { backgroundColor: Colors.background }]}
                   onPress={() => meeting.summary && copyToClipboard(meeting.summary)}
                 >
                   <ThemedText style={styles.buttonText}>Copy</ThemedText>
                 </TouchableOpacity>
                 
                 <TouchableOpacity
-                  style={[styles.actionButton, { backgroundColor: theme === 'dark' ? Colors.dark.background : Colors.light.background }]}
+                  style={[styles.actionButton, { backgroundColor: Colors.background }]}
                   onPress={() => shareSummary(meeting)}
                 >
                   <ThemedText style={styles.buttonText}>Share</ThemedText>
                 </TouchableOpacity>
                 
                 <TouchableOpacity
-                  style={[styles.actionButton, { backgroundColor: theme === 'dark' ? Colors.dark.background : Colors.light.background }]}
+                  style={[styles.actionButton, { backgroundColor: Colors.background }]}
                   onPress={() => viewSummary(meeting)}
                 >
                   <ThemedText style={styles.buttonText}>View</ThemedText>
@@ -124,10 +121,9 @@ export default function SummariesScreen() {
         <View style={styles.modalOverlay}>
           <ThemedView
             style={styles.modalContent}
-            lightColor={Colors.light.background}
-            darkColor={Colors.dark.background}
+            lightColor={Colors.background}
           >
-            <View style={[styles.modalHeader, { borderBottomColor: theme === 'dark' ? Colors.dark.cardBackground : Colors.light.cardBackground }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: Colors.cardBackground }]}>
               <ThemedText style={styles.modalTitle}>
                 {selectedMeeting?.title}
               </ThemedText>
@@ -145,7 +141,7 @@ export default function SummariesScreen() {
               </ThemedText>
             </ScrollView>
 
-            <View style={[styles.modalFooter, { borderTopColor: theme === 'dark' ? Colors.dark.cardBackground : Colors.light.cardBackground }]}>
+            <View style={[styles.modalFooter, { borderTopColor: Colors.cardBackground }]}>
               <TouchableOpacity
                 style={styles.modalButton}
                 onPress={() => selectedMeeting?.summary && copyToClipboard(selectedMeeting.summary)}
@@ -275,7 +271,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   modalButton: {
-    backgroundColor: '#FF6B00',
+    backgroundColor: TINT_COLOR,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 20,
