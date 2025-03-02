@@ -67,7 +67,7 @@ function RootLayoutNav() {
         />
         <Stack.Screen name="+not-found" />
       </Stack>
-      <StatusBar style="dark" /> {/* Use a single status bar style */}
+      <StatusBar style="dark" /> 
     </>
   );
 }

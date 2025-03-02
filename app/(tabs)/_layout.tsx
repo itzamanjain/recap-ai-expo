@@ -6,7 +6,6 @@ import TabBarBackground from '../../components/ui/TabBarBackground';
 import { Colors } from '../../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 
-const TINT_COLOR = '#FF6B00';
 
 export default function TabLayout() {
   return (
