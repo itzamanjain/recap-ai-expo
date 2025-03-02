@@ -1,26 +1,18 @@
-import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import React,{ useEffect } from 'react';
+import React, { useEffect } from 'react';
 import 'react-native-reanimated';
-
-import { ThemeProvider, useTheme } from '@/hooks/ThemeContext';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  return (
-    <ThemeProvider>
-      <RootLayoutNav />
-    </ThemeProvider>
-  );
+  return <RootLayoutNav />;
 }
 
 function RootLayoutNav() {
-  const { theme, isThemeReady } = useTheme();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
@@ -28,8 +20,8 @@ function RootLayoutNav() {
   useEffect(() => {
     async function hideSplash() {
       try {
-        if (loaded && isThemeReady) {
-          console.log('[Debug] Hiding splash screen - Fonts loaded:', loaded, 'Theme ready:', isThemeReady);
+        if (loaded) {
+          console.log('[Debug] Hiding splash screen - Fonts loaded:', loaded);
           await SplashScreen.hideAsync();
           console.log('[Debug] Splash screen hidden successfully');
         }
@@ -48,15 +40,15 @@ function RootLayoutNav() {
     }
 
     hideSplash();
-  }, [loaded, isThemeReady]);
+  }, [loaded]);
 
   // Don't render anything until everything is ready
-  if (!loaded || !isThemeReady) {
+  if (!loaded) {
     return null;
   }
 
   return (
-    <NavigationThemeProvider value={theme === 'dark' ? DarkTheme : DefaultTheme}>
+    <>
       <Stack>
         <Stack.Screen
           name="(tabs)"
@@ -64,7 +56,7 @@ function RootLayoutNav() {
             headerShown: true,
             headerTitle: "Recap AI",
             headerStyle: {
-              backgroundColor: theme === 'dark' ? '#000' : '#fff',
+              backgroundColor: '#fff', // Use a single background color
             },
             headerTitleStyle: {
               color: '#FF6B00',
@@ -75,7 +67,7 @@ function RootLayoutNav() {
         />
         <Stack.Screen name="+not-found" />
       </Stack>
-      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
-    </NavigationThemeProvider>
+      <StatusBar style="dark" /> {/* Use a single status bar style */}
+    </>
   );
 }
