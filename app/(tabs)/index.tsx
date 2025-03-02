@@ -22,7 +22,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { Meeting, RootStackParamList, UserProfile } from '../types/navigation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { transcribeUrlDeepgram } from '../../lib/transcribe';
-import { Edit, User } from 'lucide-react-native';
 
 const MEETINGS_STORAGE_KEY = '@recap_ai_meetings';
 const PROFILE_STORAGE_KEY = '@recap_ai_profile';
@@ -279,13 +278,13 @@ export default function HomeScreen() {
               <ThemedText style={styles.subtitle}>{profile.email}</ThemedText>
             </View>
             <TouchableOpacity onPress={handleEditProfile} style={styles.editProfileButton}>
-              <User size={24} color={Colors.icon} />
+              <Ionicons name="person-outline" size={24} color={Colors.icon} />
             </TouchableOpacity>
           </View>
         ) : (
           <TouchableOpacity style={styles.setupProfile} onPress={() => setIsEditingProfile(true)}>
             <ThemedText style={styles.setupProfileText}>Set up your profile</ThemedText>
-            <User size={24} color={Colors.icon} />
+            <Ionicons name="person-outline" size={24} color={Colors.icon} />
           </TouchableOpacity>
         )}
       </View>
@@ -325,7 +324,7 @@ export default function HomeScreen() {
                     onPress={() => handleEditTitle(meeting)}
                   >
                     <ThemedText style={styles.meetingTitle}>
-                      {meeting.title} <Edit size={11} color={Colors.text} />
+                      {meeting.title} <Ionicons name="create-outline" size={11} color={Colors.text} />
                     </ThemedText>
                     <ThemedText style={styles.meetingTime}>{meeting.timestamp}</ThemedText>
                     <ThemedText style={styles.duration}>Duration: {formatTime(meeting.duration)}</ThemedText>

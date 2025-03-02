@@ -1,7 +1,6 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform } from 'react-native';
-import { AudioLinesIcon, HomeIcon, NotebookTabsIcon, NotepadTextDashedIcon, UserCircle } from 'lucide-react-native';
 import { HapticTab } from '../../components/HapticTab';
 import TabBarBackground from '../../components/ui/TabBarBackground';
 import { Colors } from '../../constants/Colors';
@@ -29,7 +28,8 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ focused }) => (
-            <HomeIcon
+            <Ionicons
+              name="home-outline"
               size={28}
               color={focused ? Colors.tint : Colors.tabIconDefault}
             />
@@ -54,9 +54,10 @@ export default function TabLayout() {
         options={{
           title: 'Record',
           tabBarIcon: ({ focused }) => (
-            <AudioLinesIcon
-              size={40}
-              color={TINT_COLOR}
+            <Ionicons
+              name="mic-outline"
+              size={28}
+              color={focused ? Colors.tint : Colors.tabIconDefault}
             />
           ),
         }}
@@ -66,7 +67,8 @@ export default function TabLayout() {
         options={{
           title: 'Summaries',
           tabBarIcon: ({ focused }) => (
-            <NotebookTabsIcon
+            <Ionicons
+              name="book-outline"
               size={28}
               color={focused ? Colors.tint : Colors.tabIconDefault}
             />
@@ -78,7 +80,8 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ focused }) => (
-            <UserCircle
+            <Ionicons
+              name="person-outline"
               size={28}
               color={focused ? Colors.tint : Colors.tabIconDefault}
             />
