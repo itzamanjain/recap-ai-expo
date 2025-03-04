@@ -9,7 +9,7 @@ if (!openai_api_key) {
 
 const openai = new OpenAI({ apiKey: openai_api_key });
 
-export async function generateSummary(transcript: string): Promise<string> {
+export async function getSummary(transcript: string): Promise<string> {
     const SystemPrompt = `
 📢 **You are an AI meeting assistant** that extracts key insights from discussions.  
 Your task is to analyze the transcript and generate a structured summary with:  

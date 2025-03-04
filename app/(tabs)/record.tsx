@@ -277,7 +277,8 @@ export default function RecordScreen() {
 
       <View style={styles.recordingContainer}>
         <ThemedText style={styles.title}>{isRecording ? "Recording in Progress" : "Ready to Record"}</ThemedText>
-
+        <ThemedText style={styles.subtitle}>Currently Supporting English Language</ThemedText>
+        <ThemedText style={styles.subtitle}>Multilingual Support Coming Soon!</ThemedText>
         {countdown > 0 ? (
           <Animated.Text
             style={[
@@ -333,6 +334,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  subtitle:{
+    fontSize: 16,
+    color: "#666",
     marginBottom: 10,
     textAlign: "center",
   },
