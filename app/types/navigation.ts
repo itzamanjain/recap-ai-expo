@@ -13,6 +13,7 @@ export interface Meeting {
   timestamp: string;
   uri: string;
   duration: number;
+  language?: string;
   hasTranscript: boolean;
   transcript?: string;
   summary?: string;

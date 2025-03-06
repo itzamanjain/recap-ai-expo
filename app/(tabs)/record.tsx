@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { StyleSheet, TouchableOpacity, View, Text, Dimensions, Animated } from "react-native"
+import { StyleSheet, TouchableOpacity, View, Text, Dimensions, Animated, Modal } from "react-native"
+import DropDownPicker from "react-native-dropdown-picker"
 import { Audio } from "expo-av"
 import * as FileSystem from "expo-file-system"
 import { StatusBar } from "expo-status-bar"
@@ -25,9 +26,63 @@ export default function RecordScreen() {
   // Recording states
   const [recording, setRecording] = useState<Audio.Recording | null>(null)
   const [isRecording, setIsRecording] = useState(false)
-  const [recordingTime, setRecordingTime] = useState(0)
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [selectedLanguage, setSelectedLanguage] = useState("english (india)")
+  const [open, setOpen] = useState(false);
+
+  const [items, setItems] = useState([
+  { label: "Bulgarian", value: "bulgarian" },
+  { label: "Catalan", value: "catalan" },
+  { label: "Chinese (Simplified)", value: "chinese (simplified)" },
+  { label: "Chinese (Traditional)", value: "chinese (traditional)" },
+  { label: "Czech", value: "czech" },
+  { label: "Danish", value: "danish" },
+  { label: "Dutch", value: "dutch" },
+  { label: "English (Australia)", value: "english (australia)" },
+  { label: "English (Great Britain)", value: "english (great britain)" },
+  { label: "English (India)", value: "english (india)" },
+  { label: "English (New Zealand)", value: "english (new zealand)" },
+  { label: "English (United States)", value: "english (united states)" },
+  { label: "Estonian", value: "estonian" },
+  { label: "Finnish", value: "finnish" },
+  { label: "French", value: "french" },
+  { label: "French (Canada)", value: "french (canada)" },
+  { label: "German", value: "german" },
+  { label: "German (Switzerland)", value: "german (switzerland)" },
+  { label: "Greek", value: "greek" },
+  { label: "Hindi", value: "hindi" },
+  { label: "Hindi (Latin Script)", value: "hindi (latin script)" },
+  { label: "Hungarian", value: "hungarian" },
+  { label: "Indonesian", value: "indonesian" },
+  { label: "Italian", value: "italian" },
+  { label: "Japanese", value: "japanese" },
+  { label: "Korean", value: "korean" },
+  { label: "Latvian", value: "latvian" },
+  { label: "Lithuanian", value: "lithuanian" },
+  { label: "Malay", value: "malay" },
+  { label: "Norwegian", value: "norwegian" },
+  { label: "Polish", value: "polish" },
+  { label: "Portuguese", value: "portuguese" },
+  { label: "Portuguese (Brazil)", value: "portuguese (brazil)" },
+  { label: "Portuguese (Portugal)", value: "portuguese (portugal)" },
+  { label: "Romanian", value: "romanian" },
+  { label: "Russian", value: "russian" },
+  { label: "Slovak", value: "slovak" },
+  { label: "Spanish", value: "spanish" },
+  { label: "Spanish (Latin America)", value: "spanish (latin america)" },
+  { label: "Swedish", value: "swedish" },
+  { label: "Tamil", value: "tamil" },
+  { label: "Thai", value: "thai" },
+  { label: "Turkish", value: "turkish" },
+  { label: "Ukrainian", value: "ukrainian" },
+  { label: "Vietnamese", value: "vietnamese" },
+]);
+
+  
+  
   const [showStartButton, setShowStartButton] = useState(true)
   const [countdown, setCountdown] = useState(0)
+  const [languageModalVisible, setLanguageModalVisible] = useState(false)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const startTimeRef = useRef<number>(0)
   const countdownAnimation = useRef(new Animated.Value(1)).current
@@ -66,7 +121,7 @@ export default function RecordScreen() {
       if (timerRef.current) {
         clearInterval(timerRef.current)
       }
-      
+
       startTimeRef.current = Date.now()
       timerRef.current = setInterval(() => {
         const elapsedSeconds = Math.floor((Date.now() - startTimeRef.current) / 1000)
@@ -167,7 +222,7 @@ export default function RecordScreen() {
       })
 
       await newRecording.startAsync()
-      
+
       setRecording(newRecording)
       setIsRecording(true)
       setRecordingTime(0)
@@ -184,7 +239,7 @@ export default function RecordScreen() {
       if (!recording) return
 
       await recording.stopAndUnloadAsync()
-      
+
       const uri = recording.getURI()
       if (!uri) {
         throw new Error("Failed to get recording URI")
@@ -204,6 +259,7 @@ export default function RecordScreen() {
         title: `Meeting ${timestamp.toLocaleTimeString()}`,
         timestamp: formatTimestamp(timestamp),
         uri: newUri,
+        language: selectedLanguage,
         duration: recordingTime,
         hasTranscript: false,
       }
@@ -306,7 +362,7 @@ export default function RecordScreen() {
         {showStartButton ? (
           <TouchableOpacity
             style={[styles.button, { backgroundColor: TINT_COLOR }]}
-            onPress={startCountdown}
+            onPress={() => setLanguageModalVisible(true)}
           >
             <Text style={styles.buttonText}>Start Recording</Text>
           </TouchableOpacity>
@@ -316,6 +372,44 @@ export default function RecordScreen() {
           </TouchableOpacity>
         )}
       </View>
+
+      {/* Language Options Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={languageModalVisible}
+        onRequestClose={() => setLanguageModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>  
+          <Text style={styles.modalTitle}>Select Meeting Language</Text>
+            <Text>
+            <DropDownPicker
+              open={open}
+              value={selectedLanguage}
+              items={items}
+              setOpen={setOpen}
+              setValue={(callback) => {
+                const value = callback(selectedLanguage);
+                setSelectedLanguage(value);
+              }}
+              setItems={setItems}
+              containerStyle={{ width: "100%", marginBottom: 20 }}
+              style={{ borderColor: "#ccc" }}
+            />
+            </Text>
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: TINT_COLOR }]}
+              onPress={() => {
+                setLanguageModalVisible(false)
+                startCountdown()
+              }}
+            >
+              <Text style={styles.buttonText}>Start Recording</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ThemedView>
   )
 }
@@ -337,7 +431,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: "center",
   },
-  subtitle:{
+  subtitle: {
     fontSize: 16,
     color: "#666",
     marginBottom: 10,
@@ -380,5 +474,23 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "#FFFFFF",
+    padding: 20,
+    borderRadius: 10,
+    width: "80%",
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 20,
   },
 })

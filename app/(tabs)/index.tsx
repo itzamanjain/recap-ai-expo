@@ -208,7 +208,7 @@ export default function HomeScreen() {
         setTranscribingId(meeting.id);
         Alert.alert('Generating Transcript', 'Please wait while we process your recording...');
         
-        const result = await transcribeUrlDeepgram(meeting.uri);
+        const result = await transcribeUrlDeepgram(meeting.uri,meeting.language!);
         if (result?.results?.channels[0]?.alternatives[0]?.transcript) {
           const transcript = result.results.channels[0].alternatives[0].transcript;
           const updatedMeeting = {
