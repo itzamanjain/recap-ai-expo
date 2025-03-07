@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { StyleSheet, TouchableOpacity, View, Text, Dimensions, Animated, Modal } from "react-native"
+import { StyleSheet, TouchableOpacity, View, Text, Image, Dimensions, Animated, Modal } from "react-native"
 import DropDownPicker from "react-native-dropdown-picker"
 import { Audio } from "expo-av"
 import * as FileSystem from "expo-file-system"
@@ -330,11 +330,15 @@ export default function RecordScreen() {
   return (
     <ThemedView style={styles.container}>
       <StatusBar style="light" />
-
+      <View>
+          <Image 
+          source={require("../../assets/images/programmer.gif")} 
+          style={{ width: 200, height: 200 }} 
+        />
+        </View>
       <View style={styles.recordingContainer}>
         <ThemedText style={styles.title}>{isRecording ? "Recording in Progress" : "Ready to Record"}</ThemedText>
-        <ThemedText style={styles.subtitle}>Currently Supporting English Language</ThemedText>
-        <ThemedText style={styles.subtitle}>Multilingual Support Coming Soon!</ThemedText>
+        <ThemedText style={styles.subtitle}>Available in Over 20 Languages</ThemedText>
         {countdown > 0 ? (
           <Animated.Text
             style={[
