@@ -9,10 +9,10 @@ export default function ProfileScreen() {
         <View style={styles.profileSection}>
           <View style={styles.profileImageContainer}>
             <View style={styles.profileImagePlaceholder}>
-              <Text style={styles.profileImageIcon}>👤</Text>
+              <Text style={styles.profileImageIcon}>👻</Text>
             </View>
           </View>
-          <Text style={styles.userName}>John Doe</Text>
+          <Text style={styles.userName}>Coming Soon</Text>
           <Text style={styles.userPlan}>Premium Plan</Text>
           <View style={styles.proUserBadge}>
             <Text style={styles.proUserText}>Pro User</Text>
@@ -20,32 +20,8 @@ export default function ProfileScreen() {
         </View>
 
         {/* App Preferences */}
-        <View style={styles.preferencesCard}>
-          <Text style={styles.cardTitle}>App Preferences</Text>
-          
-          <View style={styles.preferenceItem}>
-            <Text style={styles.preferenceText}>Notifications</Text>
-            <Switch
-              trackColor={{ false: '#e0e0e0', true: '#FF6B00' }}
-              thumbColor="#FFFFFF"
-              ios_backgroundColor="#e0e0e0"
-              value={true}
-            />
-          </View>
-          
-          <View style={styles.preferenceItem}>
-            <Text style={styles.preferenceText}>Auto-transcribe</Text>
-            <Switch
-              trackColor={{ false: '#e0e0e0', true: '#FF6B00' }}
-              thumbColor="#FFFFFF"
-              ios_backgroundColor="#e0e0e0"
-              value={true}
-            />
-          </View>
-        </View>
-
         {/* Account Stats */}
-        <View style={styles.statsCard}>
+        {/* <View style={styles.statsCard}>
           <Text style={styles.cardTitle}>Account Stats</Text>
           
           <View style={styles.statsGrid}>
@@ -69,7 +45,7 @@ export default function ProfileScreen() {
               <Text style={styles.statLabel}>AI Queries</Text>
             </View>
           </View>
-        </View>
+        </View> */}
       </ScrollView>
     </View>
   );
@@ -78,10 +54,11 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#ffffff',
   },
   profileSection: {
     alignItems: 'center',
+    height: '100%',
     paddingVertical: 20,
     backgroundColor: '#FFFFFF',
   },
@@ -92,7 +69,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#FF6B00',
+    backgroundColor: '#ffffff',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -154,7 +131,7 @@ const styles = StyleSheet.create({
   },
   statsCard: {
     margin: 16,
-    marginTop: 0,
+    marginTop: 8,
     padding: 16,
     borderRadius: 16,
     backgroundColor: '#FFFFFF',
