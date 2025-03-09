@@ -38,7 +38,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="transcripts"
         options={{
-          title: 'Transcripts',
+          title: 'Notes',
           tabBarIcon: ({ focused }) => (
             <Ionicons 
               name="document-text-outline" 
@@ -55,19 +55,6 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => (
             <Ionicons
               name="mic-outline"
-              size={28}
-              color={focused ? Colors.tint : Colors.tabIconDefault}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="summaries"
-        options={{
-          title: 'Summaries',
-          tabBarIcon: ({ focused }) => (
-            <Ionicons
-              name="book-outline"
               size={28}
               color={focused ? Colors.tint : Colors.tabIconDefault}
             />

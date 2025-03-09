@@ -9,7 +9,9 @@ import {
   RefreshControl,
   TextInput,
   Modal,
-  Image
+  Image,
+  SafeAreaView,
+  Text
 } from 'react-native';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
@@ -241,25 +243,6 @@ export default function HomeScreen() {
     setNewTitle(meeting.title);
   };
 
-  const saveTitle = async () => {
-    if (editingMeeting && newTitle.trim()) {
-      const updatedMeeting = {
-        ...editingMeeting,
-        title: newTitle.trim()
-      };
-      await updateMeeting(updatedMeeting);
-      setEditingMeeting(null);
-      setNewTitle('');
-    }
-  };
-
-  const handleEditProfile = () => {
-    if (profile) {
-      setEditedProfile(profile);
-    }
-    setIsEditingProfile(true);
-  };
-
   if (isLoading) {
     return (
       <ThemedView style={[styles.container, styles.centerContent]}>
@@ -269,28 +252,13 @@ export default function HomeScreen() {
   }
 
   return (
-    <ThemedView style={styles.container}>
-      <View style={styles.header}>
-        {profile ? (
-          <View style={styles.profileContainer}>
-            <View style={styles.profileInfo}>
-              <ThemedText style={styles.welcomeText}>Welcome, {profile.name}</ThemedText>
-              <ThemedText style={styles.subtitle}>{profile.email}</ThemedText>
-            </View>
-            <TouchableOpacity onPress={handleEditProfile} style={styles.editProfileButton}>
-              <Ionicons name="person-outline" size={24} color={Colors.icon} />
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity style={styles.setupProfile} onPress={() => setIsEditingProfile(true)}>
-            <ThemedText style={styles.setupProfileText}>Set up your profile</ThemedText>
-            <Ionicons name="person-outline" size={24} color={Colors.icon} />
-          </TouchableOpacity>
-        )}
-      </View>
-
+    <SafeAreaView style={styles.container}>
+      {/* <View>
+        <Text>Start Taking Notes </Text>
+      </View> */}
+      <ThemedView style={styles.container}>
       <View style={styles.sectionContainer}>
-        <ThemedText style={styles.sectionTitle}>Recent Meetings</ThemedText>
+        <ThemedText style={styles.sectionTitle}>Recent Meetings Notes</ThemedText>
         
         <ScrollView 
           style={styles.meetingsList}
@@ -324,7 +292,7 @@ export default function HomeScreen() {
                     onPress={() => handleEditTitle(meeting)}
                   >
                     <ThemedText style={styles.meetingTitle}>
-                      {meeting.title} <Ionicons name="create-outline" size={11} color={Colors.text} />
+                      {meeting.title}
                     </ThemedText>
                     <ThemedText style={styles.meetingTime}>{meeting.timestamp}</ThemedText>
                     <ThemedText style={styles.duration}>Duration: {formatTime(meeting.duration)}</ThemedText>
@@ -372,93 +340,8 @@ export default function HomeScreen() {
         </ScrollView>
       </View>
 
-      {/* Edit Title Modal */}
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={!!editingMeeting}
-        onRequestClose={() => setEditingMeeting(null)}
-      >
-        <View style={styles.modalOverlay}>
-          <ThemedView style={styles.modalContent}>
-            <ThemedText style={styles.modalTitle}>Edit Meeting Title</ThemedText>
-            <TextInput
-              style={[
-                styles.titleInput,
-                { 
-                  color: Colors.text,
-                  borderColor: Colors.cardBackground
-                }
-              ]}
-              value={newTitle}
-              onChangeText={setNewTitle}
-              placeholder="Enter new title"
-              placeholderTextColor={Colors.icon}
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setEditingMeeting(null)}
-              >
-                <ThemedText style={styles.modalButtonText}>Cancel</ThemedText>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.saveButton]}
-                onPress={saveTitle}
-              >
-                <ThemedText style={styles.saveButtonText}>Save</ThemedText>
-              </TouchableOpacity>
-            </View>
-          </ThemedView>
-        </View>
-      </Modal>
-
-      {/* Edit Profile Modal */}
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={isEditingProfile}
-        onRequestClose={() => setIsEditingProfile(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <ThemedView style={styles.modalContent}>
-            <ThemedText style={styles.modalTitle}>
-              {profile ? 'Edit Profile' : 'Set Up Profile'}
-            </ThemedText>
-            <TextInput
-              style={[styles.titleInput, { color: Colors.text, borderColor: Colors.cardBackground }]}
-              value={editedProfile.name}
-              onChangeText={(text) => setEditedProfile({ ...editedProfile, name: text })}
-              placeholder="Your Name"
-              placeholderTextColor={Colors.icon}
-            />
-            <TextInput
-              style={[styles.titleInput, { color: Colors.text, borderColor: Colors.cardBackground }]}
-              value={editedProfile.email}
-              onChangeText={(text) => setEditedProfile({ ...editedProfile, email: text })}
-              placeholder="Your Email"
-              placeholderTextColor={Colors.icon}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setIsEditingProfile(false)}
-              >
-                <ThemedText style={styles.modalButtonText}>Cancel</ThemedText>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.saveButton]}
-                onPress={() => saveProfile(editedProfile)}
-              >
-                <ThemedText style={styles.saveButtonText}>Save</ThemedText>
-              </TouchableOpacity>
-            </View>
-          </ThemedView>
-        </View>
-      </Modal>
     </ThemedView>
+    </SafeAreaView>
   );
 }
 
@@ -512,6 +395,7 @@ const styles = StyleSheet.create({
   },
   sectionContainer: {
     flex: 1,
+    marginTop: 20,
     paddingHorizontal: 20,
   },
   sectionTitle: {
