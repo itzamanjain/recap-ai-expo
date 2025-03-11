@@ -5,35 +5,59 @@ import { ThemedView } from "../components/ThemedView"; // Adjust import based on
 interface Meeting {
   id: string;
   title: string;
-  timestamp: string;
-  duration: number;
+  timestamp: string | number; // Ensure this is either an ISO string or a timestamp number
+  duration: number; // Duration in seconds
   transcript?: string;
   summary?: string;
   hasTranscript: boolean;
-  icon?: string; // Added optional icon field
+  icon?: string;
 }
 
 interface TranscriptCardProps {
   meeting: Meeting;
 }
 
+
+// Function to format duration in HH:MM:SS
+const formatDuration = (seconds: number) => {
+  const h = Math.floor(seconds / 3600)
+    .toString()
+    .padStart(2, "0");
+  const m = Math.floor((seconds % 3600) / 60)
+    .toString()
+    .padStart(2, "0");
+  const s = (seconds % 60).toString().padStart(2, "0");
+  return `${h}:${m}:${s}`;
+};
+
 const TranscriptCard: React.FC<TranscriptCardProps> = ({ meeting }) => {
+  // Ensure timestamp is valid
+  // console.log("timestamp ",meeting.timestamp);
+  
+  const meetingDate = new Date(meeting.timestamp);
+  const formattedDate = isNaN(meetingDate.getTime())
+    ? "Invalid Date"
+    : meetingDate.toLocaleString(); // Formats date correctly
+
   return (
     <ThemedView key={meeting.id} style={styles.transcriptCard}>
       {/* Left-side Icon */}
-      {meeting.icon && (
-        <View style={styles.iconContainer}>
+      <View style={styles.iconContainer}>
+        {meeting.icon ? (
           <Image source={{ uri: meeting.icon }} style={styles.icon} />
-        </View>
-      )}
+        ) : (
+          <Text style={styles.iconPlaceholder}>📝</Text>
+        )}
+      </View>
 
       {/* Meeting Details */}
       <View style={styles.transcriptContent}>
         <ThemedText style={styles.transcriptTitle} numberOfLines={1}>
           {meeting.title}
         </ThemedText>
-        <ThemedText style={styles.transcriptTime}>
-          {new Date(meeting.timestamp).toLocaleString()}
+        <ThemedText style={styles.transcriptTime}>{meeting.timestamp}</ThemedText>
+        <ThemedText style={styles.transcriptDuration}>
+          Duration {formatDuration(meeting.duration)}
         </ThemedText>
       </View>
     </ThemedView>
@@ -45,37 +69,51 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 12,
-    marginVertical: 8,
+    borderRadius: 14,
+    padding: 14,
+    marginVertical: 10,
     borderWidth: 1,
     borderColor: "#E0E0E0",
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
+    elevation: 4, // For Android shadow
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: 50,
+    height: 50,
+    borderRadius: 14,
     backgroundColor: "#FFF5EB",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: 14,
   },
   icon: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     resizeMode: "contain",
+  },
+  iconPlaceholder: {
+    fontSize: 20,
+    color: "#FF8C42", // Orange theme color
   },
   transcriptContent: {
     flex: 1,
   },
   transcriptTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#222",
   },
   transcriptTime: {
     fontSize: 14,
-    color: "#666",
+    color: "#777",
+  },
+  transcriptDuration: {
+    fontSize: 14,
+    color: "gray",
+    fontWeight: "500",
   },
 });
 

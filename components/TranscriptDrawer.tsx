@@ -8,11 +8,11 @@ import {
   Animated,
   Dimensions,
   PanResponder,
-  Text,
   Platform
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import Slider from "@react-native-community/slider"
+import { Audio } from 'expo-av' // Import Audio from Expo AV
 
 // Custom Components
 import { ThemedText } from "../components/ThemedText"
@@ -25,15 +25,16 @@ interface Meeting {
   id: string
   title: string
   timestamp: string
+  uri: string  // Updated to match the interface
   duration: number
+  language?: string
+  hasTranscript: boolean
   transcript?: string
   summary?: string
-  hasTranscript: boolean
-  audioUrl?: string
 }
 
 interface TranscriptDrawerProps {
-  meeting: Meeting | null
+  meeting: Meeting
   isVisible: boolean
   onClose: () => void
 }
@@ -42,6 +43,8 @@ const { height } = Dimensions.get("window")
 const DRAWER_MIN_HEIGHT = 100
 const DRAWER_MAX_HEIGHT = height * 0.9
 const SNAP_POINTS = [DRAWER_MIN_HEIGHT, height * 0.5, DRAWER_MAX_HEIGHT]
+// Define tab bar height based on platform
+const TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 83 : 56
 
 const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
   meeting,
@@ -53,9 +56,34 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
   const [activeTab, setActiveTab] = useState("transcript")
   
   // Audio player state
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [currentTime, setCurrentTime] = useState(0)
-  const [duration, setDuration] = useState(meeting?.duration || 0)
+  const [isPlaying, setIsPlaying] = useState(false);
+  const currentTimeRef = useRef(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(meeting?.duration || 0);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [isAudioLoaded, setIsAudioLoaded] = useState(false);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+
+  // Ref to keep track of playback position update interval
+  const playbackPositionInterval = useRef<NodeJS.Timeout | null>(null);
+
+  // Interval to update currentTime state
+  // useEffect(() => {
+  //   if (isPlaying && isAudioLoaded) {
+  //     playbackPositionInterval.current = setInterval(() => {
+  //       setCurrentTime(currentTimeRef.current);
+  //     }, 1000);
+  //   } else if (playbackPositionInterval.current) {
+  //     clearInterval(playbackPositionInterval.current);
+  //     playbackPositionInterval.current = null;
+  //   }
+
+  //   return () => {
+  //     if (playbackPositionInterval.current) {
+  //       clearInterval(playbackPositionInterval.current);
+  //     }
+  //   };
+  // }, [isPlaying, isAudioLoaded]);
   
   // Open/close drawer animations
   useEffect(() => {
@@ -66,6 +94,11 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
         tension: 50,
         friction: 12,
       }).start()
+      
+      // Load audio when drawer becomes visible
+      if (meeting?.uri && !isAudioLoaded && !isLoadingAudio) {
+        loadAudio()
+      }
     } else {
       Animated.spring(translateY, {
         toValue: height,
@@ -73,8 +106,146 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
         tension: 50,
         friction: 12,
       }).start()
+      
+      // Stop audio when drawer is closed
+      if (sound) {
+        stopAudio()
+      }
     }
-  }, [isVisible, translateY])
+  }, [isVisible, translateY, meeting])
+  
+  // Cleanup audio resources when component unmounts
+  useEffect(() => {
+    return () => {
+      if (sound) {
+        stopAudio()
+        sound.unloadAsync()
+      }
+      if (playbackPositionInterval.current) {
+        clearInterval(playbackPositionInterval.current)
+      }
+    }
+  }, [sound])
+  
+  // Load audio file
+  const loadAudio = async () => {
+    if (!meeting?.uri) return
+    
+    try {
+      setIsLoadingAudio(true)
+      
+      // Unload any existing sound first
+      if (sound) {
+        await sound.unloadAsync()
+      }
+      
+      // Configure audio mode
+      await Audio.setAudioModeAsync({
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+        shouldDuckAndroid: true,
+      })
+      
+      // Load the audio file
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        { uri: meeting.uri },
+        { shouldPlay: false, positionMillis: 0 },
+        onPlaybackStatusUpdate
+      )
+      
+      setSound(newSound)
+      setIsAudioLoaded(true)
+      console.log("Audio loaded successfully")
+    } catch (error) {
+      console.error("Failed to load audio", error)
+    } finally {
+      setIsLoadingAudio(false)
+    }
+  }
+  
+  // Handle audio playback status updates
+  const onPlaybackStatusUpdate = (status: any) => {
+    if (status.isLoaded) {
+      currentTimeRef.current = status.positionMillis / 1000;
+      setDuration(status.durationMillis / 1000);
+      setIsPlaying(status.isPlaying);
+
+      // If the audio has reached the end, reset to beginning
+      if (status.didJustFinish) {
+        setIsPlaying(false)
+        setCurrentTime(0)
+        // Reset playback position to beginning
+        sound?.setPositionAsync(0)
+      }
+    }
+  }
+  
+  // Play/pause toggle handler
+  const togglePlayback = async () => {
+    if (!sound) {
+      console.log("No sound loaded")
+      return
+    }
+    
+    try {
+      if (isPlaying) {
+        await sound.pauseAsync()
+      } else {
+        await sound.playAsync()
+      }
+    } catch (error) {
+      console.error("Error toggling playback", error)
+    }
+  }
+  
+  // Stop audio playback
+  const stopAudio = async () => {
+    if (!sound) return
+    
+    try {
+      await sound.stopAsync()
+      setIsPlaying(false)
+      setCurrentTime(0)
+    } catch (error) {
+      console.error("Error stopping audio", error)
+    }
+  }
+  
+  // Rewind 10 seconds
+  const rewind10Seconds = async () => {
+    if (!sound) return
+    
+    try {
+      const newPosition = Math.max(0, currentTime - 10) * 1000
+      await sound.setPositionAsync(newPosition)
+    } catch (error) {
+      console.error("Error rewinding", error)
+    }
+  }
+  
+  // Forward 10 seconds
+  const forward10Seconds = async () => {
+    if (!sound) return
+    
+    try {
+      const newPosition = Math.min(duration, currentTime + 10) * 1000
+      await sound.setPositionAsync(newPosition)
+    } catch (error) {
+      console.error("Error forwarding", error)
+    }
+  }
+  
+  // Audio seek handler
+  const handleSeek = async (value: number) => {
+    if (!sound) return
+    
+    try {
+      await sound.setPositionAsync(value * 1000)
+      setCurrentTime(value)
+    } catch (error) {
+      console.error("Error seeking", error)
+    }
+  }
 
   // Handle drawer drag gestures
   const panResponder = useRef(
@@ -120,23 +291,11 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
     })
   ).current
 
-  // Format time for audio player
+  // Format time for audio player (mm:ss)
   const formatTime = (seconds: number) => {
     const min = Math.floor(seconds / 60)
     const sec = Math.floor(seconds % 60)
     return `${min}:${sec < 10 ? '0' : ''}${sec}`
-  }
-
-  // Play/pause toggle handler
-  const togglePlayback = () => {
-    setIsPlaying(!isPlaying)
-    // Here you would add actual audio playback logic
-  }
-
-  // Audio seek handler
-  const handleSeek = (value: number) => {
-    setCurrentTime(value)
-    // Here you would add actual audio seeking logic
   }
 
   if (!meeting) return null
@@ -147,6 +306,7 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
         styles.container,
         {
           transform: [{ translateY }],
+          zIndex: 1000,
         },
       ]}
     >
@@ -198,7 +358,13 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
       </View>
 
       {/* Content Area */}
-      <ScrollView style={styles.contentContainer} contentContainerStyle={styles.contentInner}>
+      <ScrollView 
+        style={styles.contentContainer} 
+        contentContainerStyle={[
+          styles.contentInner,
+          { paddingBottom: 120 }
+        ]}
+      >
         {activeTab === "transcript" && (
           <ThemedText style={styles.transcriptText}>
             {meeting.transcript || "Transcript not available"}
@@ -222,7 +388,10 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
       </ScrollView>
 
       {/* Audio Player */}
-      <View style={styles.audioPlayer}>
+      <View style={[
+        styles.audioPlayer,
+        { paddingBottom: Platform.OS === 'ios' ? 34 + TAB_BAR_HEIGHT : 16 + TAB_BAR_HEIGHT }
+      ]}>
         <View style={styles.progressContainer}>
           <ThemedText style={styles.timeText}>{formatTime(currentTime)}</ThemedText>
           <Slider
@@ -234,27 +403,47 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
             maximumTrackTintColor="#D1D1D1"
             thumbTintColor={Colors.tint}
             onValueChange={handleSeek}
+            disabled={!isAudioLoaded}
           />
           <ThemedText style={styles.timeText}>{formatTime(duration)}</ThemedText>
         </View>
         
-        <View style={styles.controls}>
-          <TouchableOpacity style={styles.controlButton}>
-            <Ionicons name="play-skip-back" size={24} color={Colors.text} />
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.playButton} onPress={togglePlayback}>
+      <View style={styles.controls}>
+        <TouchableOpacity
+          style={styles.controlButton}
+          onPress={rewind10Seconds}
+          disabled={!isAudioLoaded}
+        >
+          <Ionicons name="arrow-back-circle" size={24} color={isAudioLoaded ? Colors.text : Colors.icon} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.playButton,
+            !isAudioLoaded && styles.playButtonDisabled
+          ]}
+          onPress={togglePlayback}
+          disabled={!isAudioLoaded || isLoadingAudio}
+        >
+          {isLoadingAudio ? (
+            <Ionicons name="hourglass-outline" size={32} color="#FFFFFF" />
+          ) : (
             <Ionicons
               name={isPlaying ? "pause" : "play"}
               size={32}
               color="#FFFFFF"
             />
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.controlButton}>
-            <Ionicons name="play-skip-forward" size={24} color={Colors.text} />
-          </TouchableOpacity>
-        </View>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.controlButton}
+          onPress={forward10Seconds}
+          disabled={!isAudioLoaded}
+        >
+          <Ionicons name="arrow-forward-circle" size={24} color={isAudioLoaded ? Colors.text : Colors.icon} />
+        </TouchableOpacity>
+      </View>
       </View>
     </Animated.View>
   )
@@ -279,7 +468,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 10,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 16, // Account for bottom safe area
+    paddingBottom: Platform.OS === 'ios' ? 34 : 16,
   },
   dragHandleContainer: {
     width: "100%",
@@ -340,7 +529,7 @@ const styles = StyleSheet.create({
   },
   contentInner: {
     padding: 20,
-    paddingBottom: 100, // Extra padding at the bottom to avoid content being hidden behind audio player
+    paddingBottom: 100,
   },
   transcriptText: {
     fontSize: 16,
@@ -368,9 +557,16 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: "#FFFFFF",
     paddingTop: 8,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 16, // Account for bottom safe area
+    paddingBottom: Platform.OS === 'ios' ? 34 : 16,
     borderTopWidth: 1,
     borderTopColor: "#EEEEEE",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 5,
+    zIndex: 1,
+    paddingBottom: 80, // Add padding to the bottom of the audio player
   },
   progressContainer: {
     flexDirection: "row",
@@ -404,6 +600,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginHorizontal: 24,
+  },
+  playButtonDisabled: {
+    backgroundColor: Colors.icon,
   },
 });
 

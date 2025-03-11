@@ -36,19 +36,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="transcripts"
-        options={{
-          title: 'Notes',
-          tabBarIcon: ({ focused }) => (
-            <Ionicons 
-              name="document-text-outline" 
-              size={28} 
-              color={focused ? Colors.tint : Colors.tabIconDefault} 
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="record"
         options={{
           title: 'Record',
@@ -62,18 +49,19 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="transcripts"
         options={{
-          title: 'Profile',
+          title: 'Notes',
           tabBarIcon: ({ focused }) => (
-            <Ionicons
-              name="person-outline"
-              size={28}
-              color={focused ? Colors.tint : Colors.tabIconDefault}
+            <Ionicons 
+              name="document-text-outline" 
+              size={28} 
+              color={focused ? Colors.tint : Colors.tabIconDefault} 
             />
           ),
         }}
       />
+      
     </Tabs>
   );
 }

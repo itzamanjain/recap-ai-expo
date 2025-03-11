@@ -25,16 +25,16 @@ import TranscriptDetailDrawer from  "@/components/TranscriptDrawer"
 import { Colors } from "../../constants/Colors"
 import { getSummary } from "@/lib/summurize"
 
-// Types
 interface Meeting {
-  id: string
-  title: string
-  timestamp: string
-  duration: number
-  transcript?: string
-  summary?: string
-  hasTranscript: boolean
-  audioUrl?: string // Added for audio playback
+  id: string;
+  title: string;
+  timestamp: string;
+  uri: string;
+  duration: number;
+  language?: string;
+  hasTranscript: boolean;
+  transcript?: string;
+  summary?: string;
 }
 
 const MEETINGS_STORAGE_KEY = "@recap_ai_meetings"
@@ -188,11 +188,13 @@ export default function TranscriptPage() {
       </ScrollView>
 
       {/* Transcript Detail Drawer */}
-      <TranscriptDetailDrawer
-        meeting={selectedMeeting}
-        isVisible={isDrawerVisible}
-        onClose={handleCloseDrawer}
-      />
+      {selectedMeeting && (
+        <TranscriptDetailDrawer
+          meeting={selectedMeeting}
+          isVisible={isDrawerVisible}
+          onClose={handleCloseDrawer}
+        />
+      )}
     </ThemedView>
   )
 }
