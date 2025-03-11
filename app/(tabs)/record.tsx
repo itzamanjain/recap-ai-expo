@@ -19,7 +19,8 @@ import { ChevronDown } from "react-native-feather" // Import icon for dropdown
 const { width } = Dimensions.get("window")
 
 // Define tint color constant
-const TINT_COLOR = '#FF6B00';
+const PRIMARY_COLOR = '#FF6B00';
+const SECONDARY_COLOR = '#3F51B5'; // Example: A deep indigo
 
 export default function RecordScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
@@ -314,13 +315,12 @@ export default function RecordScreen() {
 
   const animatedBarStyles = bars.map((bar) => {
     const animatedStyle = useAnimatedStyle(() => {
-      const randomHeight = isRecording ? 20 + Math.random() * 60 : 20
       return {
-        height: withSpring(randomHeight, {
+        height: withSpring(isRecording ? 60 : 20, {
           damping: 10,
           stiffness: 80,
         }),
-        backgroundColor: TINT_COLOR,
+        backgroundColor: PRIMARY_COLOR,
       }
     })
     return animatedStyle
@@ -491,10 +491,12 @@ const styles = StyleSheet.create({
   timer: {
     fontSize: 42,
     marginTop: 10,
-    padding: 15,
+    paddingVertical: 20, // Add vertical padding
+    paddingHorizontal: 30, // Add horizontal padding
     fontWeight: "bold",
     marginVertical: 10,
     fontVariant: ["tabular-nums"],
+    textAlign: "center", // Center the text
   },
   countdown: {
     fontSize: 64,
@@ -532,9 +534,9 @@ const styles = StyleSheet.create({
   langButton: {
     paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: 8,
-    borderColor: '#000000',
-    borderWidth: 1,
+    borderRadius: 25, // Rounded corners for a modern look
+    borderColor: PRIMARY_COLOR, // Use primary color for border
+    borderWidth: 2, // Slightly thicker border
     marginTop: 5,
     flexDirection: "row",
     alignItems: "center",
@@ -544,14 +546,30 @@ const styles = StyleSheet.create({
   button: {
     paddingVertical: 12,
     paddingHorizontal: 25,
-    borderRadius: 8,
+    borderRadius: 25, // Rounded corners for a modern look
     marginTop: 15,
-    backgroundColor: TINT_COLOR,
+    backgroundColor: PRIMARY_COLOR,
     minWidth: 180,
     alignItems: "center",
+    shadowColor: "#000", // Add a subtle shadow
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   stopButton: {
-    backgroundColor: "#FF3B30",
+    backgroundColor: "#e53935", // A darker red for better contrast
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   langButtonText: {
     color: "#000000",
@@ -562,7 +580,8 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#ffffff",
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "600", // Slightly lighter font weight
+    textTransform: "uppercase", // Uppercase text for a modern look
   },
   modalOverlay: {
     flex: 1,
@@ -571,12 +590,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalContent: {
-    backgroundColor: "#FFFFFF",
-    padding: 16,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    width: "100%",
+    backgroundColor: "#f5f5f5", // A light gray background
+    padding: 20,
+    borderRadius: 20, // Consistent rounded corners
+    width: "90%", // Slightly reduced width for better spacing
     alignItems: "center",
+    shadowColor: "#000", // Add a subtle shadow
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -607,11 +633,19 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   confirmButton: {
-    backgroundColor: TINT_COLOR,
+    backgroundColor: PRIMARY_COLOR,
     paddingVertical: 15,
     paddingHorizontal: 30,
     borderRadius: 10,
     width: '100%',
     alignItems: "center",
+    shadowColor: "#000", // Add a subtle shadow
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
 })
