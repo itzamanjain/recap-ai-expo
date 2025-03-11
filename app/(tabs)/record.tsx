@@ -331,7 +331,7 @@ export default function RecordScreen() {
       <StatusBar style="light" />
       
       {/* Header Section */}
-      <View style={styles.headerSection}>
+      {/* <View style={styles.headerSection}>
         <Image 
           source={require("../../assets/images/programmer.gif")} 
           style={styles.headerImage} 
@@ -343,7 +343,7 @@ export default function RecordScreen() {
           Available in Over 20 Languages
         </ThemedText>
       </View>
-      
+       */}
       {/* Main Content Section */}
       <View style={styles.recordingContainer}>
         {showStartButton && (

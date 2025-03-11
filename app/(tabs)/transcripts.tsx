@@ -6,10 +6,8 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
-  Modal,
   RefreshControl,
   Alert,
-  ActivityIndicator,
   Platform
 } from "react-native"
 import * as Clipboard from "expo-clipboard"
@@ -20,6 +18,8 @@ import { Ionicons } from "@expo/vector-icons"
 // Custom Components
 import { ThemedText } from "../../components/ThemedText"
 import { ThemedView } from "../../components/ThemedView"
+import TranscriptCard from "@/components/NotesCard"
+import TranscriptDetailDrawer from  "@/components/TranscriptDrawer"
 
 // Constants
 import { Colors } from "../../constants/Colors"
@@ -34,10 +34,8 @@ interface Meeting {
   transcript?: string
   summary?: string
   hasTranscript: boolean
+  audioUrl?: string // Added for audio playback
 }
-
-// Mock Summary Generation Function (Replace with actual implementation)
-
 
 const MEETINGS_STORAGE_KEY = "@recap_ai_meetings"
 
@@ -45,13 +43,10 @@ export default function TranscriptPage() {
   // State Management
   const route = useRoute()
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null)
-  const [modalVisible, setModalVisible] = useState(false)
-  const [summaryModalVisible, setSummaryModalVisible] = useState(false)
-  const [currentSummary, setCurrentSummary] = useState<string>("")
   const [meetings, setMeetings] = useState<Meeting[]>([])
   const [refreshing, setRefreshing] = useState(false)
-  const [loadingMeetingId, setLoadingMeetingId] = useState<string | null>(null)
+  const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null)
+  const [isDrawerVisible, setIsDrawerVisible] = useState(false)
 
   // Load Meetings on Focus
   useFocusEffect(
@@ -66,7 +61,7 @@ export default function TranscriptPage() {
     if (params?.meetingId) {
       const meeting = meetings.find((m) => m.id === params.meetingId)
       if (meeting?.transcript) {
-        setSelectedMeeting(meeting)
+        handleMeetingSelect(meeting)
       }
     }
   }, [route.params, meetings])
@@ -91,50 +86,25 @@ export default function TranscriptPage() {
     }
   }
 
-  // Generate Meeting Summary
-  const viewSummary = async (meeting: Meeting) => {
-    const transcript = meeting.transcript
-    if (!transcript) return
-
-    try {
-      setLoadingMeetingId(meeting.id)
-      const summary = await getSummary(transcript)
-      
-      setCurrentSummary(summary)
-      setSummaryModalVisible(true)
-
-      // Update meeting with summary
-      const updatedMeeting = { ...meeting, summary }
-      const updatedMeetings = meetings.map((m) => 
-        m.id === meeting.id ? updatedMeeting : m
-      )
-      setMeetings(updatedMeetings)
-
-      // Persist updated meetings
-      await AsyncStorage.setItem(
-        MEETINGS_STORAGE_KEY, 
-        JSON.stringify(updatedMeetings)
-      )
-    } catch (error) {
-      console.error("Failed to generate summary:", error)
-      Alert.alert("Error", "Could not generate summary")
-    } finally {
-      setLoadingMeetingId(null)
-    }
-  }
-
   // Refresh Meetings
   const onRefresh = useCallback(() => {
     setRefreshing(true)
     loadMeetings()
   }, [])
 
-  // Format Meeting Duration
-  const formatTime = (seconds: number): string => {
-    if (!seconds || seconds <= 0) return "00:00"
-    const mins = Math.floor(seconds / 60).toString().padStart(2, "0")
-    const secs = Math.floor(seconds % 60).toString().padStart(2, "0")
-    return `${mins}:${secs}`
+  // Handle Meeting Selection
+  const handleMeetingSelect = (meeting: Meeting) => {
+    setSelectedMeeting(meeting)
+    setIsDrawerVisible(true)
+  }
+
+  // Close Drawer
+  const handleCloseDrawer = () => {
+    setIsDrawerVisible(false)
+    // Optional: Reset after animation completes
+    setTimeout(() => {
+      setSelectedMeeting(null)
+    }, 300)
   }
 
   // Filter Meetings
@@ -144,30 +114,11 @@ export default function TranscriptPage() {
       meeting.transcript?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  // View Full Transcript
-  const viewFullTranscript = (meeting: Meeting) => {
-    setSelectedMeeting(meeting)
-    setModalVisible(true)
-  }
-
-  // Close Modals
-  const closeModal = () => setModalVisible(false)
-  const closeSummaryModal = () => {
-    setSummaryModalVisible(false)
-    setCurrentSummary("")
-  }
-
-  // Copy Summary to Clipboard
-  const copySummaryToClipboard = async () => {
-    await Clipboard.setString(currentSummary)
-    Alert.alert("Copied", "Summary copied to clipboard")
-  }
-
   return (
     <ThemedView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <ThemedText style={styles.headerTitle}>Transcripts</ThemedText>
+        <ThemedText style={styles.headerTitle}>Meeting Notes</ThemedText>
       </View>
 
       {/* Search Container */}
@@ -226,144 +177,22 @@ export default function TranscriptPage() {
           </ThemedView>
         ) : (
           filteredMeetings.map((meeting) => (
-            <ThemedView
+            <TouchableOpacity
               key={meeting.id}
-              style={styles.transcriptCard}
-              lightColor="#FFF5EB"
+              onPress={() => handleMeetingSelect(meeting)}
             >
-              {/* Meeting Header */}
-              <View style={styles.transcriptHeader}>
-                <View>
-                  <ThemedText style={styles.transcriptTitle}>
-                    {meeting.title}
-                  </ThemedText>
-                  <ThemedText style={styles.transcriptTime}>
-                    {meeting.timestamp}
-                  </ThemedText>
-                </View>
-                <ThemedText style={styles.transcriptDuration}>
-                  Duration: {formatTime(meeting.duration)}
-                </ThemedText>
-              </View>
-
-              {/* Transcript Preview */}
-              <ThemedText 
-                style={styles.transcriptSummary} 
-                numberOfLines={3}
-              >
-                {meeting.transcript}
-              </ThemedText>
-
-              {/* Action Buttons */}
-              <View style={styles.buttonsSideBySide}>
-                <TouchableOpacity
-                  style={[styles.readFullButton, { backgroundColor: "#FFE0CC" }]}
-                  onPress={() => viewFullTranscript(meeting)}
-                >
-                  <ThemedText style={[styles.readFullText, { color: "#333333" }]}>
-                    Read Full
-                  </ThemedText>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.readFullButton, { backgroundColor: "#FFE0CC" }]}
-                  onPress={() => viewSummary(meeting)}
-                  disabled={loadingMeetingId === meeting.id}
-                >
-                  {loadingMeetingId === meeting.id ? (
-                    <ActivityIndicator size="small" color="#333333" />
-                  ) : (
-                    <ThemedText style={[styles.readFullText, { color: "#333333" }]}>
-                      Read Summary
-                    </ThemedText>
-                  )}
-                </TouchableOpacity>
-              </View>
-            </ThemedView>
+              <TranscriptCard meeting={meeting} />
+            </TouchableOpacity>
           ))
         )}
       </ScrollView>
 
-      {/* Full Transcript Modal */}
-      <Modal 
-        animationType="slide" 
-        transparent={true} 
-        visible={modalVisible} 
-        onRequestClose={closeModal}
-      >
-        <View style={styles.modalOverlay}>
-          <ThemedView style={styles.modalContent} lightColor="#FFFFFF">
-            <View style={styles.modalHeader}>
-              <View>
-                <ThemedText style={styles.modalTitle}>
-                  {selectedMeeting?.title}
-                </ThemedText>
-                <ThemedText style={styles.modalSubtitle}>
-                  {selectedMeeting?.timestamp} • Duration: {formatTime(selectedMeeting?.duration || 0)}
-                </ThemedText>
-              </View>
-              <TouchableOpacity 
-                style={styles.closeButton} 
-                onPress={closeModal}
-              >
-                <ThemedText style={styles.closeButtonText}>✕</ThemedText>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.modalBody}>
-              <ThemedText style={styles.fullTranscriptText}>
-                {selectedMeeting?.transcript}
-              </ThemedText>
-            </ScrollView>
-          </ThemedView>
-        </View>
-      </Modal>
-
-      {/* Summary Modal */}
-      <Modal 
-        animationType="slide" 
-        transparent={true} 
-        visible={summaryModalVisible} 
-        onRequestClose={closeSummaryModal}
-      >
-        <View style={styles.modalOverlay}>
-          <ThemedView style={styles.modalContent} lightColor="#FFFFFF">
-            <View style={styles.modalHeader}>
-              <View>
-                <ThemedText style={styles.modalTitle}>
-                  Meeting Summary
-                </ThemedText>
-                <ThemedText style={styles.modalSubtitle}>
-                  Your meeting summary & action items
-                </ThemedText>
-              </View>
-              <TouchableOpacity 
-                style={styles.closeButton} 
-                onPress={closeSummaryModal}
-              >
-                <ThemedText style={styles.closeButtonText}>✕</ThemedText>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.modalBody}>
-              <ThemedText style={styles.fullTranscriptText}>
-                {currentSummary}
-              </ThemedText>
-            </ScrollView>
-
-            <View style={[styles.modalFooter, { borderTopColor: "#EEEEEE" }]}>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: "#FFE0CC" }]}
-                onPress={copySummaryToClipboard}
-              >
-                <ThemedText style={[styles.modalButtonText, { color: "#333333" }]}>
-                  Copy Summary
-                </ThemedText>
-              </TouchableOpacity>
-            </View>
-          </ThemedView>
-        </View>
-      </Modal>
+      {/* Transcript Detail Drawer */}
+      <TranscriptDetailDrawer
+        meeting={selectedMeeting}
+        isVisible={isDrawerVisible}
+        onClose={handleCloseDrawer}
+      />
     </ThemedView>
   )
 }
@@ -406,122 +235,6 @@ const styles = StyleSheet.create({
   transcriptList: {
     flex: 1,
     paddingHorizontal: 20,
-  },
-  transcriptCard: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  transcriptHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 8,
-  },
-  transcriptTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  transcriptTime: {
-    fontSize: 14,
-    opacity: 0.7,
-    marginTop: 2,
-  },
-  transcriptDuration: {
-    fontSize: 14,
-    opacity: 0.7,
-  },
-  transcriptSummary: {
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 12,
-  },
-  buttonsSideBySide: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  readFullButton: {
-    alignSelf: "flex-end",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-  },
-  readFullText: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContent: {
-    borderRadius: 16,
-    width: "90%",
-    maxHeight: "80%",
-    padding: 20,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    borderBottomWidth: 1,
-    borderBottomColor: "#EEEEEE",
-    paddingBottom: 16,
-    marginBottom: 16,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  modalSubtitle: {
-    fontSize: 14,
-    opacity: 0.7,
-    marginTop: 4,
-  },
-  closeButton: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    padding: 4,
-  },
-  closeButtonText: {
-    fontSize: 22,
-    fontWeight: "bold",
-    opacity: 0.6,
-  },
-  modalBody: {
-    marginBottom: 16,
-    maxHeight: "70%",
-  },
-  fullTranscriptText: {
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  modalFooter: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    borderTopWidth: 1,
-    paddingTop: 16,
-  },
-  modalButton: {
-    backgroundColor: Colors.tint,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    marginLeft: 12,
-  },
-  modalButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "500",
   },
   emptyState: {
     alignItems: "center",
