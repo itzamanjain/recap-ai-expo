@@ -313,7 +313,7 @@ export default function HomeScreen() {
                       />
                     </TouchableOpacity>
                     
-                    <TouchableOpacity 
+                    {/* <TouchableOpacity 
                       style={[
                         styles.actionButton, 
                         { backgroundColor: Colors.background },
@@ -331,7 +331,7 @@ export default function HomeScreen() {
                           color={Colors.text}
                         />
                       )}
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
                   </View>
                 </View>
               </ThemedView>

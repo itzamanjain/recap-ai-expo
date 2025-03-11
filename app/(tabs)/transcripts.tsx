@@ -12,7 +12,7 @@ import {
 } from "react-native"
 import * as Clipboard from "expo-clipboard"
 import AsyncStorage from "@react-native-async-storage/async-storage"
-import { useRoute, useFocusEffect } from "@react-navigation/native"
+import { useRoute, useFocusEffect, useNavigation, useIsFocused } from "@react-navigation/native"
 import { Ionicons } from "@expo/vector-icons"
 
 // Custom Components
@@ -75,7 +75,20 @@ export default function TranscriptPage() {
         handleMeetingSelect(meeting)
       }
     }
-  }, [route.params, meetings])
+  }, [route.params, meetings]);
+
+  const navigation = useNavigation();
+  const isFocused = useIsFocused();
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('blur', () => {
+      if (!isFocused) {
+        setSelectedMeeting(null);
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, isFocused]);
 
   // Load Meetings from Storage
   const loadMeetings = async () => {
