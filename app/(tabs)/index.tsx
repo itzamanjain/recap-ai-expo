@@ -24,6 +24,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Meeting, RootStackParamList, UserProfile } from '../types/navigation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { transcribeUrlDeepgram } from '../../lib/transcribe';
+import TranscriptCard from '@/components/NotesCard';
 
 const MEETINGS_STORAGE_KEY = '@recap_ai_meetings';
 const PROFILE_STORAGE_KEY = '@recap_ai_profile';
@@ -283,57 +284,9 @@ export default function HomeScreen() {
             meetings.map((meeting) => (
               <ThemedView
                 key={meeting.id}
-                style={styles.meetingCard}
-                lightColor={Colors.cardBackground}
+                
               >
-                <View style={styles.meetingCardContent}>
-                  <TouchableOpacity 
-                    style={styles.meetingInfo}
-                    onPress={() => handleEditTitle(meeting)}
-                  >
-                    <ThemedText style={styles.meetingTitle}>
-                      {meeting.title}
-                    </ThemedText>
-                    <ThemedText style={styles.meetingTime}>{meeting.timestamp}</ThemedText>
-                    <ThemedText style={styles.duration}>Duration: {formatTime(meeting.duration)}</ThemedText>
-                    {meeting.hasTranscript && (
-                      <ThemedText style={styles.transcriptAvailable}>Transcript Available</ThemedText>
-                    )}
-                  </TouchableOpacity>
-                  
-                  <View style={styles.meetingActions}>
-                    <TouchableOpacity 
-                      style={[styles.actionButton, { backgroundColor: Colors.background }]}
-                      onPress={() => playAudio(meeting)}
-                    >
-                      <Ionicons 
-                        name={playingId === meeting.id ? "stop" : "play"} 
-                        size={20} 
-                        color={Colors.text}
-                      />
-                    </TouchableOpacity>
-                    
-                    {/* <TouchableOpacity 
-                      style={[
-                        styles.actionButton, 
-                        { backgroundColor: Colors.background },
-                        transcribingId === meeting.id && styles.disabledButton
-                      ]}
-                      onPress={() => viewTranscript(meeting)}
-                      disabled={transcribingId === meeting.id}
-                    >
-                      {transcribingId === meeting.id ? (
-                        <ActivityIndicator size="small" color={Colors.text} />
-                      ) : (
-                        <Ionicons 
-                          name="document-text-outline" 
-                          size={20} 
-                          color={Colors.text}
-                        />
-                      )}
-                    </TouchableOpacity> */}
-                  </View>
-                </View>
+                <TranscriptCard meeting={meeting} />
               </ThemedView>
             ))
           )}
