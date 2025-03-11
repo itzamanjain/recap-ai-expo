@@ -46,7 +46,18 @@ export default function TranscriptPage() {
   const [meetings, setMeetings] = useState<Meeting[]>([])
   const [refreshing, setRefreshing] = useState(false)
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null)
-  const [isDrawerVisible, setIsDrawerVisible] = useState(false)
+  const [isDrawerVisible, setIsDrawerVisible] = useState(false);
+
+  // Update Meeting
+  const updateMeeting = (updatedMeeting: Meeting) => {
+    setMeetings(
+      meetings.map((meeting) =>
+        meeting.id === updatedMeeting.id ? updatedMeeting : meeting
+      )
+    );
+    setSelectedMeeting(updatedMeeting);
+    AsyncStorage.setItem(MEETINGS_STORAGE_KEY, JSON.stringify(meetings));
+  };
 
   // Load Meetings on Focus
   useFocusEffect(
@@ -72,7 +83,14 @@ export default function TranscriptPage() {
       setRefreshing(true)
       const storedMeetings = await AsyncStorage.getItem(MEETINGS_STORAGE_KEY)
       if (storedMeetings) {
-        const allMeetings = JSON.parse(storedMeetings)
+        let allMeetings = JSON.parse(storedMeetings)
+        
+        // Ensure that meetings have the 'summary' property
+        allMeetings = allMeetings.map((meeting: Meeting) => ({
+          ...meeting,
+          summary: meeting.summary || "", // Default to empty string if undefined
+        }));
+
         const meetingsWithTranscripts = allMeetings.filter(
           (m: Meeting) => m.hasTranscript && m.transcript
         )
@@ -193,6 +211,7 @@ export default function TranscriptPage() {
           meeting={selectedMeeting}
           isVisible={isDrawerVisible}
           onClose={handleCloseDrawer}
+          updateMeeting={updateMeeting}
         />
       )}
     </ThemedView>

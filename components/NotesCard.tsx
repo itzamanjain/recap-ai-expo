@@ -39,15 +39,15 @@ const TranscriptCard: React.FC<TranscriptCardProps> = ({ meeting }) => {
     ? "Invalid Date"
     : meetingDate.toLocaleString(); // Formats date correctly
 
+
+    const emoji = ["✨", "🪴", "🕧", "🗒️", "📓", "📅", "📝", "📊", "📈", "📆"];
+    const randomEmoji = emoji[Math.floor(Math.random() * emoji.length)];
+
   return (
     <ThemedView key={meeting.id} style={styles.transcriptCard}>
       {/* Left-side Icon */}
       <View style={styles.iconContainer}>
-        {meeting.icon ? (
-          <Image source={{ uri: meeting.icon }} style={styles.icon} />
-        ) : (
-          <Text style={styles.iconPlaceholder}>📝</Text>
-        )}
+          <Text style={styles.iconPlaceholder}>{randomEmoji}</Text>
       </View>
 
       {/* Meeting Details */}

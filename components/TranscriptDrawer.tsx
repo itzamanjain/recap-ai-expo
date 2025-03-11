@@ -16,6 +16,7 @@ import { Audio } from 'expo-av' // Import Audio from Expo AV
 
 // Custom Components
 import { ThemedText } from "../components/ThemedText"
+import { getSummary } from "../lib/summurize"
 import { ThemedView } from "../components/ThemedView"
 // Constants
 import { Colors } from "../constants/Colors"
@@ -37,6 +38,7 @@ interface TranscriptDrawerProps {
   meeting: Meeting
   isVisible: boolean
   onClose: () => void
+  updateMeeting: (updatedMeeting: Meeting) => void;
 }
 
 const { height } = Dimensions.get("window")
@@ -49,11 +51,13 @@ const TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 83 : 56
 const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
   meeting,
   isVisible,
-  onClose
+  onClose,
+  updateMeeting
 }) => {
   // Animation refs and state
   const translateY = useRef(new Animated.Value(height)).current
-  const [activeTab, setActiveTab] = useState("transcript")
+  const [activeTab, setActiveTab] = useState("transcript");
+  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
   
   // Audio player state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -372,9 +376,37 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
         )}
         
         {activeTab === "summary" && (
-          <ThemedText style={styles.summaryText}>
-            {meeting.summary || "Summary not available"}
-          </ThemedText>
+          <>
+            {meeting.summary ? (
+              <ThemedText style={styles.summaryText}>
+                {meeting.summary}
+              </ThemedText>
+            ) : (
+              <TouchableOpacity
+                style={styles.generateButton}
+                onPress={async () => {
+                  if (!meeting.transcript) {
+                    return;
+                  }
+                  setIsSummaryLoading(true);
+                  try {
+                    const summary = await getSummary(meeting.transcript);
+                    updateMeeting({ ...meeting, summary: summary });
+                    console.log("Summary generated:", summary);
+                  } catch (error) {
+                    console.error("Failed to generate summary:", error);
+                  } finally {
+                    setIsSummaryLoading(false);
+                  }
+                }}
+                disabled={isSummaryLoading}
+              >
+                <ThemedText style={styles.generateButtonText}>
+                  {isSummaryLoading ? "Generating..." : "Generate Summary"}
+                </ThemedText>
+              </TouchableOpacity>
+            )}
+          </>
         )}
         
         {activeTab === "chat" && (
@@ -566,7 +598,6 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 5,
     zIndex: 1,
-    paddingBottom: 80, // Add padding to the bottom of the audio player
   },
   progressContainer: {
     flexDirection: "row",
@@ -603,6 +634,18 @@ const styles = StyleSheet.create({
   },
   playButtonDisabled: {
     backgroundColor: Colors.icon,
+  },
+  generateButton: {
+    backgroundColor: Colors.tint,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    marginTop: 10,
+  },
+  generateButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
 
