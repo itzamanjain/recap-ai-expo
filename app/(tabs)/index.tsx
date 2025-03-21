@@ -10,6 +10,7 @@ import {
   TextInput,
   Modal,
   Image,
+  Pressable,
   SafeAreaView,
   Text
 } from 'react-native';
@@ -258,14 +259,20 @@ export default function HomeScreen() {
               </ThemedText>
             </ThemedView>
           ) : (
-            meetings.map((meeting) => (
-              <TranscriptCard 
-                key={meeting.id} 
-                meeting={meeting} 
-                transcribeMeeting={transcribeMeeting}
-                transcribingId={transcribingId}
-              />
+            meetings.slice(0, 10).map((meeting) => (
+              <Pressable key={meeting.id} onPress={() => navigation.navigate('(tabs)', { screen: 'transcripts', params: { meetingId: meeting.id } })}>
+                <TranscriptCard
+                  meeting={meeting}
+                  transcribeMeeting={transcribeMeeting}
+                  transcribingId={transcribingId}
+                />
+              </Pressable>
             ))
+          )}
+          {meetings.length > 10 && (
+            <ThemedText style={styles.viewAllText}>
+              View all meetings in the Notes tab
+            </ThemedText>
           )}
         </ScrollView>
       </View>
@@ -446,5 +453,11 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  viewAllText: {
+    fontSize: 16,
+    color: Colors.tint,
+    marginTop: 10,
+    textAlign: 'center',
   },
 });

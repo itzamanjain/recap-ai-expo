@@ -9,7 +9,8 @@ import {
   RefreshControl,
   Alert,
   Platform,
-  Text
+  Text,
+  Pressable
 } from "react-native"
 import * as Clipboard from "expo-clipboard"
 import AsyncStorage from "@react-native-async-storage/async-storage"
@@ -39,14 +40,23 @@ export default function TranscriptPage() {
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
 
   // Update Meeting
-  const updateMeeting = (updatedMeeting: Meeting) => {
+  const updateMeeting = async (updatedMeeting: Meeting) => {
     setMeetings(
       meetings.map((meeting) =>
         meeting.id === updatedMeeting.id ? updatedMeeting : meeting
       )
     );
-    setSelectedMeeting(updatedMeeting);
-    AsyncStorage.setItem(MEETINGS_STORAGE_KEY, JSON.stringify(meetings));
+    setSelectedMeeting(updatedMeeting); // Update selectedMeeting state
+    try {
+      await AsyncStorage.setItem(MEETINGS_STORAGE_KEY, JSON.stringify(
+        meetings.map((meeting) =>
+          meeting.id === updatedMeeting.id ? updatedMeeting : meeting
+        )
+      ));
+    } catch (error) {
+      console.error("Failed to save meetings:", error);
+      Alert.alert("Error", "Could not save meetings");
+    }
   };
 
   // Load Meetings on Focus
@@ -198,7 +208,7 @@ export default function TranscriptPage() {
           </ThemedView>
         ) : (
           filteredMeetings.map((meeting) => (
-            <TouchableOpacity
+            <Pressable
               key={meeting.id}
               onPress={() => handleMeetingSelect(meeting)}
             >
@@ -207,7 +217,7 @@ export default function TranscriptPage() {
                 transcribeMeeting={() => {}}
                 transcribingId={null}
               />
-            </TouchableOpacity>
+            </Pressable>
           ))
         )}
       </ScrollView>
