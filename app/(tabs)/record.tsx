@@ -432,7 +432,7 @@ export default function RecordScreen() {
                 setItems={setItems}
                 style={styles.dropdown}
                 maxHeight={300}
-                listMode="SCROLLVIEW"
+                listMode="MODAL"
                 zIndex={3000}
               />
             </View>
