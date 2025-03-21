@@ -8,7 +8,8 @@ import {
   TextInput,
   RefreshControl,
   Alert,
-  Platform
+  Platform,
+  Text
 } from "react-native"
 import * as Clipboard from "expo-clipboard"
 import AsyncStorage from "@react-native-async-storage/async-storage"
@@ -24,18 +25,7 @@ import TranscriptDetailDrawer from  "@/components/TranscriptDrawer"
 // Constants
 import { Colors } from "../../constants/Colors"
 import { getSummary } from "@/lib/summurize"
-
-interface Meeting {
-  id: string;
-  title: string;
-  timestamp: string;
-  uri: string;
-  duration: number;
-  language?: string;
-  hasTranscript: boolean;
-  transcript?: string;
-  summary?: string;
-}
+import { Meeting } from "../../app/types/navigation";
 
 const MEETINGS_STORAGE_KEY = "@recap_ai_meetings"
 
@@ -212,7 +202,11 @@ export default function TranscriptPage() {
               key={meeting.id}
               onPress={() => handleMeetingSelect(meeting)}
             >
-              <TranscriptCard meeting={meeting} />
+              <TranscriptCard
+                meeting={meeting}
+                transcribeMeeting={() => {}}
+                transcribingId={null}
+              />
             </TouchableOpacity>
           ))
         )}

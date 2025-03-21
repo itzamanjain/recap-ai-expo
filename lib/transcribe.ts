@@ -67,7 +67,7 @@ export const transcribeUrlDeepgram = async (fileUri: string, language: string) =
   console.log("inside api call language", language);
   
   // TODO: Move to environment variables or secure storage in production
-  const deepgramApiKey = "2ab46da706c36124ce96f4f0b589ee972626803f";
+  const deepgramApiKey = "2ab46da706c36124ce96f4f0b589ee972626803f"; // TODO: Move to environment variables or secure storage in production
   
   // Get language code from mapping or use default
   const languageCode = LANGUAGE_MAP[language.toLowerCase()] || DEFAULT_LANGUAGE;

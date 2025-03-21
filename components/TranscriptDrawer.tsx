@@ -8,7 +8,8 @@ import {
   Animated,
   Dimensions,
   PanResponder,
-  Platform
+  Platform,
+  Text
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import Slider from "@react-native-community/slider"
@@ -58,6 +59,7 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
   const translateY = useRef(new Animated.Value(height)).current
   const [activeTab, setActiveTab] = useState("transcript");
   const [isSummaryLoading, setIsSummaryLoading] = useState(false);
+  const [summary, setSummary] = useState(meeting.summary || "");
   
   // Audio player state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -71,24 +73,6 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
   // Ref to keep track of playback position update interval
   const playbackPositionInterval = useRef<NodeJS.Timeout | null>(null);
 
-  // Interval to update currentTime state
-  // useEffect(() => {
-  //   if (isPlaying && isAudioLoaded) {
-  //     playbackPositionInterval.current = setInterval(() => {
-  //       setCurrentTime(currentTimeRef.current);
-  //     }, 1000);
-  //   } else if (playbackPositionInterval.current) {
-  //     clearInterval(playbackPositionInterval.current);
-  //     playbackPositionInterval.current = null;
-  //   }
-
-  //   return () => {
-  //     if (playbackPositionInterval.current) {
-  //       clearInterval(playbackPositionInterval.current);
-  //     }
-  //   };
-  // }, [isPlaying, isAudioLoaded]);
-  
   // Open/close drawer animations
   useEffect(() => {
     if (isVisible) {
@@ -302,6 +286,24 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
     return `${min}:${sec < 10 ? '0' : ''}${sec}`
   }
 
+  // Function to generate summary
+  const generateSummary = async () => {
+    if (!meeting.transcript) {
+      return;
+    }
+    setIsSummaryLoading(true);
+    try {
+      const generatedSummary = await getSummary(meeting.transcript);
+      setSummary(generatedSummary);
+      const updatedMeeting = { ...meeting, summary: generatedSummary };
+      updateMeeting(updatedMeeting);
+    } catch (error) {
+      console.error("Failed to generate summary:", error);
+    } finally {
+      setIsSummaryLoading(false);
+    }
+  };
+
   if (!meeting) return null
 
   return (
@@ -377,28 +379,14 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
         
         {activeTab === "summary" && (
           <>
-            {meeting.summary ? (
+            {summary ? (
               <ThemedText style={styles.summaryText}>
-                {meeting.summary}
+                {summary}
               </ThemedText>
             ) : (
               <TouchableOpacity
                 style={styles.generateButton}
-                onPress={async () => {
-                  if (!meeting.transcript) {
-                    return;
-                  }
-                  setIsSummaryLoading(true);
-                  try {
-                    const summary = await getSummary(meeting.transcript);
-                    updateMeeting({ ...meeting, summary: summary });
-                    console.log("Summary generated:", summary);
-                  } catch (error) {
-                    console.error("Failed to generate summary:", error);
-                  } finally {
-                    setIsSummaryLoading(false);
-                  }
-                }}
+                onPress={generateSummary}
                 disabled={isSummaryLoading}
               >
                 <ThemedText style={styles.generateButtonText}>

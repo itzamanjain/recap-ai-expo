@@ -141,28 +141,6 @@ export default function HomeScreen() {
     }
   };
 
-  // const deleteMeeting = async (meetingId: string) => {
-  //   try {
-  //     if (playingId === meetingId && sound) {
-  //       await sound.unloadAsync();
-  //       setPlayingId(null);
-  //       setSound(null);
-  //     }
-
-  //     const updatedMeetings = meetings.filter(meeting => meeting.id !== meetingId);
-  //     setMeetings(updatedMeetings);
-  //     await AsyncStorage.setItem(MEETINGS_STORAGE_KEY, JSON.stringify(updatedMeetings));
-
-  //     const meeting = meetings.find(m => m.id === meetingId);
-  //     if (meeting?.uri) {
-  //       await FileSystem.deleteAsync(meeting.uri);
-  //     }
-  //   } catch (error) {
-  //     console.error('Failed to delete meeting:', error);
-  //     Alert.alert('Error', 'Failed to delete meeting');
-  //   }
-  // };
-
   const startRecording = () => {
     navigation.navigate('(tabs)', { screen: 'record' });
   };
@@ -205,28 +183,23 @@ export default function HomeScreen() {
     }
   };
 
-  const viewTranscript = async (meeting: Meeting) => {
+  const transcribeMeeting = async (meeting: Meeting) => {
     try {
-      if (!meeting.transcript) {
-        setTranscribingId(meeting.id);
-        Alert.alert('Generating Transcript', 'Please wait while we process your recording...');
-        
-        const result = await transcribeUrlDeepgram(meeting.uri,meeting.language!);
-        if (result?.results?.channels[0]?.alternatives[0]?.transcript) {
-          const transcript = result.results.channels[0].alternatives[0].transcript;
-          const updatedMeeting = {
-            ...meeting,
-            transcript,
-            hasTranscript: true
-          };
-          await updateMeeting(updatedMeeting);
-          Alert.alert('Success', 'Transcript generated successfully!');
-          navigation.navigate('(tabs)', { screen: 'transcripts', params: { meetingId: meeting.id } });
-        } else {
-          throw new Error('Failed to generate transcript');
-        }
+      setTranscribingId(meeting.id);
+      Alert.alert('Generating Transcript', 'Please wait while we process your recording...');
+      
+      const result = await transcribeUrlDeepgram(meeting.uri,meeting.language!);
+      if (result?.results?.channels[0]?.alternatives[0]?.transcript) {
+        const transcript = result.results.channels[0].alternatives[0].transcript;
+        const updatedMeeting = {
+          ...meeting,
+          transcript,
+          hasTranscript: true
+        };
+        await updateMeeting(updatedMeeting);
+        Alert.alert('Success', 'Transcript generated successfully!');
       } else {
-        navigation.navigate('(tabs)', { screen: 'transcripts', params: { meetingId: meeting.id } });
+        throw new Error('Failed to generate transcript');
       }
     } catch (error) {
       console.error('Transcription error:', error);
@@ -237,6 +210,10 @@ export default function HomeScreen() {
     } finally {
       setTranscribingId(null);
     }
+  };
+
+  const viewTranscript = async (meeting: Meeting) => {
+    navigation.navigate('(tabs)', { screen: 'transcripts', params: { meetingId: meeting.id } });
   };
 
   const handleEditTitle = (meeting: Meeting) => {
@@ -282,12 +259,12 @@ export default function HomeScreen() {
             </ThemedView>
           ) : (
             meetings.map((meeting) => (
-              <ThemedView
-                key={meeting.id}
-                
-              >
-                <TranscriptCard meeting={meeting} />
-              </ThemedView>
+              <TranscriptCard 
+                key={meeting.id} 
+                meeting={meeting} 
+                transcribeMeeting={transcribeMeeting}
+                transcribingId={transcribingId}
+              />
             ))
           )}
         </ScrollView>

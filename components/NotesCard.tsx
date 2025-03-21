@@ -1,20 +1,14 @@
-import { View, Text, Image, StyleSheet } from "react-native";
+import { View, Text, Image, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
 import { ThemedText } from "../components/ThemedText"; // Adjust import based on your theme setup
 import { ThemedView } from "../components/ThemedView"; // Adjust import based on your theme setup
-
-interface Meeting {
-  id: string;
-  title: string;
-  timestamp: string | number; // Ensure this is either an ISO string or a timestamp number
-  duration: number; // Duration in seconds
-  transcript?: string;
-  summary?: string;
-  hasTranscript: boolean;
-  icon?: string;
-}
+import { Meeting } from "../app/types/navigation";
+import { Colors } from "../constants/Colors";
+import { Ionicons } from '@expo/vector-icons';
 
 interface TranscriptCardProps {
   meeting: Meeting;
+  transcribeMeeting: (meeting: Meeting) => void;
+  transcribingId: string | null;
 }
 
 
@@ -30,7 +24,7 @@ const formatDuration = (seconds: number) => {
   return `${h}:${m}:${s}`;
 };
 
-const TranscriptCard: React.FC<TranscriptCardProps> = ({ meeting }) => {
+const TranscriptCard: React.FC<TranscriptCardProps> = ({ meeting, transcribeMeeting, transcribingId }) => {
   // Ensure timestamp is valid
   // console.log("timestamp ",meeting.timestamp);
   
@@ -59,6 +53,24 @@ const TranscriptCard: React.FC<TranscriptCardProps> = ({ meeting }) => {
         <ThemedText style={styles.transcriptDuration}>
           Duration {formatDuration(meeting.duration)}
         </ThemedText>
+        {meeting.hasTranscript && 
+          <ThemedText style={styles.transcriptAvailable}>Transcript Available</ThemedText>
+}
+          
+        
+      </View>
+      <View>
+      {!meeting.hasTranscript && <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => transcribeMeeting(meeting)}
+            disabled={transcribingId === meeting.id}
+          >
+            {transcribingId === meeting.id ? (
+              <ActivityIndicator size="small" color={Colors.text} />
+            ) : (
+              <Ionicons name="document-text-outline" size={24} color={Colors.text} />
+            )}
+          </TouchableOpacity>}
       </View>
     </ThemedView>
   );
@@ -114,6 +126,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "gray",
     fontWeight: "500",
+  },
+  transcriptAvailable: {
+    fontSize: 12,
+    color: '#4CAF50',
+    marginTop: 4,
+  },
+  meetingActions: {
+    flexDirection: 'row',
+  },
+  actionButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
 });
 
