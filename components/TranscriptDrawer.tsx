@@ -9,13 +9,16 @@ import {
   Dimensions,
   PanResponder,
   Platform,
-  Text
+  Text,
+  KeyboardAvoidingView
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
+import { TextInput } from "react-native";
 import Slider from "@react-native-community/slider"
 
 // Custom Components
 import { ThemedText } from "../components/ThemedText"
+import { askAi } from "../lib/aichat"
 import { getSummary } from "../lib/summurize"
 import { ThemedView } from "../components/ThemedView"
 // Constants
@@ -59,6 +62,39 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
   const [activeTab, setActiveTab] = useState("transcript");
   const [isSummaryLoading, setIsSummaryLoading] = useState(false);
   const [summary, setSummary] = useState(meeting.summary || "");
+  const [question, setQuestion] = useState("");
+  const [response, setResponse] = useState("");
+  const [chatHistory, setChatHistory] = useState<
+    { text: string; isUser: boolean }[]
+  >([]);
+  const chatScrollRef = useRef<ScrollView>(null);
+  const BOTTOM_NAV_HEIGHT = Platform.OS === 'ios' ? 83 : 56;
+
+  const handleSendQuestion = async () => {
+    if (!meeting.transcript || !question)
+    {
+      return;
+    }
+    try {
+      const aiResponse = await askAi(meeting.transcript, question);
+      setChatHistory((prev) => [
+        ...prev,
+        { text: question, isUser: true },
+        { text: aiResponse, isUser: false },
+      ]);
+      setQuestion("");
+      setResponse("");
+      
+      // Scroll to bottom after adding new messages
+      setTimeout(() => {
+        chatScrollRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    } catch (error) {
+      console.error("Failed to get AI response:", error);
+      setResponse("Error getting AI response. Please try again.");
+    }
+  };
+
 
   // Open/close drawer animations
   useEffect(() => {
@@ -143,6 +179,15 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
     }
   };
 
+  // Scroll to bottom when chat history changes
+  useEffect(() => {
+    if (activeTab === "chat" && chatHistory.length > 0) {
+      setTimeout(() => {
+        chatScrollRef.current?.scrollToEnd({ animated: false });
+      }, 100);
+    }
+  }, [chatHistory, activeTab]);
+
   if (!meeting) return null
 
   return (
@@ -203,21 +248,23 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
       </View>
 
       {/* Content Area */}
-      <ScrollView 
-        style={styles.contentContainer} 
-        contentContainerStyle={[
-          styles.contentInner,
-          { paddingBottom: 120 }
-        ]}
-      >
+      <View style={styles.contentWrapper}>
         {activeTab === "transcript" && (
-          <ThemedText style={styles.transcriptText}>
-            {meeting.transcript || "Transcript not available"}
-          </ThemedText>
+          <ScrollView 
+            style={styles.contentContainer} 
+            contentContainerStyle={styles.contentInner}
+          >
+            <ThemedText style={styles.transcriptText}>
+              {meeting.transcript || "Transcript not available"}
+            </ThemedText>
+          </ScrollView>
         )}
         
         {activeTab === "summary" && (
-          <>
+          <ScrollView 
+            style={styles.contentContainer} 
+            contentContainerStyle={styles.contentInner}
+          >
             {summary ? (
               <ThemedText style={styles.summaryText}>
                 {summary}
@@ -233,18 +280,58 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
                 </ThemedText>
               </TouchableOpacity>
             )}
-          </>
+          </ScrollView>
         )}
         
         {activeTab === "chat" && (
-          <View style={styles.chatPlaceholder}>
-            <Ionicons name="chatbubble-ellipses-outline" size={48} color={Colors.icon} />
-            <ThemedText style={styles.placeholderText}>
-              AI Chat with your transcript coming soon!
-            </ThemedText>
-          </View>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.chatMainContainer}
+          >
+            <ScrollView 
+              ref={chatScrollRef}
+              style={styles.chatHistoryContainer}
+              contentContainerStyle={styles.chatHistoryContent}
+            >
+              {chatHistory.map((message, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.chatMessage,
+                    message.isUser ? styles.userMessage : styles.botMessage,
+                  ]}
+                >
+                  <ThemedText
+                    style={[
+                      styles.chatMessageText,
+                      message.isUser ? styles.userMessageText : styles.botMessageText,
+                    ]}
+                  >
+                    {message.text}
+                  </ThemedText>
+                </View>
+              ))}
+            </ScrollView>
+            
+            {/* Chat input box - now outside of ScrollView and sticky at bottom */}
+            <View style={styles.chatInputContainer}>
+              <TextInput
+                style={styles.chatInput}
+                placeholder="Ask a question about the transcript"
+                placeholderTextColor={Colors.icon}
+                value={question}
+                onChangeText={setQuestion}
+              />
+              <TouchableOpacity
+                style={styles.chatSendButton}
+                onPress={handleSendQuestion}
+              >
+                <Ionicons name="send" size={24} color={Colors.text} />
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
         )}
-      </ScrollView>
+      </View>
     </Animated.View>
   )
 }
@@ -324,6 +411,9 @@ const styles = StyleSheet.create({
     color: Colors.tint,
     fontWeight: "600",
   },
+  contentWrapper: {
+    flex: 1,
+  },
   contentContainer: {
     flex: 1,
   },
@@ -370,6 +460,74 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     textAlign: "center",
+  },
+  chatMainContainer: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  chatHistoryContainer: {
+    flex: 1,
+  },
+  chatHistoryContent: {
+    padding: 20,
+    paddingBottom: TAB_BAR_HEIGHT + 60,
+  },
+  chatInputContainer: {
+    flexDirection: "row",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    color:'red',
+    position: 'absolute',
+    bottom: TAB_BAR_HEIGHT,
+    borderTopWidth: 1,
+    borderTopColor: "#EEEEEE",
+    backgroundColor: "#FFFFFF",
+  },
+  chatInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: Colors.icon,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 8,
+    color: Colors.text,
+  },
+  chatSendButton: {
+    backgroundColor: Colors.tint,
+    padding: 8,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  chatMessage: {
+    maxWidth: "80%",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 8,
+  },
+  userMessage: {
+    backgroundColor: Colors.tint,
+    alignSelf: "flex-end",
+  },
+  botMessage: {
+    backgroundColor: Colors.cardBackground,
+    alignSelf: "flex-start",
+  },
+  chatMessageText: {
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  userMessageText: {
+    color: "#FFFFFF",
+  },
+  botMessageText: {
+    color: Colors.text,
+  },
+  chatResponse: {
+    fontSize: 16,
+    lineHeight: 24,
   },
 });
 
