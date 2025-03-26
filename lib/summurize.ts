@@ -63,7 +63,7 @@ export async function getSummary(transcript: string): Promise<string> {
   const systemPrompt = `
 📢 **You are an AI meeting assistant** that extracts key insights from discussions.  
 Your task is to analyze the transcript and generate a structured summary with:  
-📝 **Concise Summary** (3-5 sentences capturing key discussions & outcomes)  
+**Concise Summary** (3-5 sentences capturing key discussions & outcomes)  
 📌 **Key Discussion Points** (major topics, decisions, concerns)  
 ✅ **Action Items** (tasks, responsible persons, and deadlines if mentioned)  
 

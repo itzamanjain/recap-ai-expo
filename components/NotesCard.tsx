@@ -49,7 +49,7 @@ const TranscriptCard: React.FC<TranscriptCardProps> = ({ meeting, transcribeMeet
         <ThemedText style={styles.transcriptTitle} numberOfLines={1}>
           {meeting.title}
         </ThemedText>
-        <ThemedText style={styles.transcriptTime}>{meeting.timestamp}</ThemedText>
+        {/* <ThemedText style={styles.transcriptTime}>{meeting.timestamp}</ThemedText> */}
         <ThemedText style={styles.transcriptDuration}>
           Duration {formatDuration(meeting.duration)}
         </ThemedText>

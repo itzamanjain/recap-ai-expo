@@ -76,15 +76,31 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
       return;
     }
     try {
-      const aiResponse = await askAi(meeting.transcript, question);
+      // Add user question to chat history immediately
       setChatHistory((prev) => [
         ...prev,
         { text: question, isUser: true },
-        { text: aiResponse, isUser: false },
+        { text: "Getting your answer...", isUser: false },
       ]);
+      
+      // Scroll to bottom after adding new messages
+      setTimeout(() => {
+        chatScrollRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+
+      const aiResponse = await askAi(meeting.transcript, question);
+
+      // Update chat history with the actual response
+      setChatHistory((prev) => {
+        const newHistory = [...prev];
+        // Replace the last message ("Getting your answer...") with the actual response
+        newHistory[newHistory.length - 1] = { text: aiResponse, isUser: false };
+        return newHistory;
+      });
+
       setQuestion("");
       setResponse("");
-      
+
       // Scroll to bottom after adding new messages
       setTimeout(() => {
         chatScrollRef.current?.scrollToEnd({ animated: true });
@@ -92,6 +108,13 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
     } catch (error) {
       console.error("Failed to get AI response:", error);
       setResponse("Error getting AI response. Please try again.");
+
+      // If there was an error, remove the "Getting your answer..." message
+      setChatHistory((prev) => {
+        const newHistory = [...prev];
+        newHistory.pop();
+        return newHistory;
+      });
     }
   };
 
