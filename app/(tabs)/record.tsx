@@ -84,6 +84,7 @@ const [open, setOpen] = useState(false);
   const [showStartButton, setShowStartButton] = useState(true)
   const [countdown, setCountdown] = useState(0)
   const [languageModalVisible, setLanguageModalVisible] = useState(false)
+  const [meetingCategoryModalVisible, setMeetingCategoryModalVisible] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const startTimeRef = useRef<number>(0)
   const countdownAnimation = useRef(new Animated.Value(1)).current
@@ -310,55 +311,46 @@ const [open, setOpen] = useState(false);
   return (
     <ThemedView style={styles.container}>
       <StatusBar style="light" />
-  
-      {/* Header */}
-      {/* <View style={styles.headerSection}>
-        <Image 
-          source={require("../../assets/images/programmer.gif")} 
-          style={styles.headerImage} 
-        />
-        <ThemedText style={styles.title}>
-          {isRecording ? "Recording in Progress" : "Ready to Record"}
-        </ThemedText>
-        <ThemedText style={styles.subtitle}>
-          Available in Over 20 Languages
-        </ThemedText>
+      {/* Header or Title */}
+      <View style={styles.headerSection}>
+        <ThemedText style={styles.title}>Start a New Recording</ThemedText>
       </View>
-   */}
+  
       {/* Main Content */}
-      <View style={styles.mainContent}>
+      <View style={styles.cardContainer}>
         {showStartButton && (
-          <>
-            <ThemedText style={styles.label}>Meeting Category:</ThemedText>
-            <DropDownPicker
-              open={open}
-              value={meetingName}
-              items={categories.map((c) => ({ label: c, value: c }))}
-              setOpen={setOpen}
-              setValue={setMeetingName}
-              setItems={() => {}}
-              placeholder="Select a category"
-              style={styles.dropdown}
-              dropDownContainerStyle={styles.dropdownContainer}
-            />
+                  <>
+                    {/* Language Selector */}
+                    <View style={styles.card}>
+                      <ThemedText style={styles.label}>Select Your Language:</ThemedText>
+                      <TouchableOpacity
+                        style={styles.langButton}
+                        onPress={() => setLanguageModalVisible(true)}
+                      >
+                        <Text style={styles.langButtonText}>
+                          {items.find(item => item.value === selectedLanguage)?.label || "Choose Language"}
+                        </Text>
+                        <ChevronDown width={20} height={20} color="#000" />
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* Meeting Category Selector */}
+                    <View style={styles.card}>
+                      <ThemedText style={styles.label}>Select Meeting Category:</ThemedText>
+                      <TouchableOpacity
+                        style={styles.langButton}
+                        onPress={() => setMeetingCategoryModalVisible(true)}
+                      >
+                        <Text style={styles.langButtonText}>
+                          {categories.find(category => category === meetingName) || "Choose Category"}
+                        </Text>
+                        <ChevronDown width={20} height={20} color="#000" />
+                      </TouchableOpacity>
+                    </View>
+                  </>
+                )}
   
-            <View style={styles.languageSelector}>
-              <ThemedText style={styles.selectedLanguageText}>
-                Select your language:
-              </ThemedText>
-              <TouchableOpacity
-                style={styles.langButton}
-                onPress={() => setLanguageModalVisible(true)}
-              >
-                <Text style={styles.langButtonText}>
-                  {items.find(item => item.value === selectedLanguage)?.label}
-                </Text>
-                <ChevronDown width={20} height={20} color="#000" />
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
-  
+        {/* Countdown or Timer */}
         {countdown > 0 ? (
           <Animated.Text
             style={[
@@ -374,26 +366,27 @@ const [open, setOpen] = useState(false);
         ) : (
           isRecording && <ThemedText style={styles.timer}>{formatTime(recordingTime)}</ThemedText>
         )}
-        <View>
-        {
-          isRecording && (
+  
+        {/* Recording Notice */}
+        {isRecording && (
+          <View style={styles.recordingNotice}>
             <Text>
-              We are recording your meeting. Please speak clearly and ensure you are in a quiet environment.
+              We are recording your meeting. Please speak clearly and ensure you're in a quiet environment.
             </Text>
-
-          )
-        }
-        </View>
+          </View>
+        )}
+  
+        {/* Start/Stop Button */}
         <TouchableOpacity
           style={[styles.button, !showStartButton && styles.stopButton]}
           onPress={showStartButton ? startCountdown : stopRecording}
         >
           <Text style={styles.buttonText}>
-            {showStartButton ? "Start Recording" : "Stop Recording"}
+            {showStartButton ? "Start Recording Now" : "Stop Recording"}
           </Text>
         </TouchableOpacity>
       </View>
-  
+
       {/* Language Modal */}
       <Modal
         animationType="slide"
@@ -409,7 +402,7 @@ const [open, setOpen] = useState(false);
                 <Text style={styles.closeButtonText}>×</Text>
               </TouchableOpacity>
             </View>
-  
+
             <DropDownPicker
               open={open}
               value={selectedLanguage}
@@ -427,7 +420,7 @@ const [open, setOpen] = useState(false);
               textStyle={{ textAlign: 'left' }}
               dropDownContainerStyle={styles.dropdownContainer}
             />
-  
+
             <TouchableOpacity
               style={styles.confirmButton}
               onPress={() => setLanguageModalVisible(false)}
@@ -437,9 +430,52 @@ const [open, setOpen] = useState(false);
           </View>
         </View>
       </Modal>
+
+      {/* Meeting Category Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={meetingCategoryModalVisible}
+        onRequestClose={() => setMeetingCategoryModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Meeting Category</Text>
+              <TouchableOpacity onPress={() => setMeetingCategoryModalVisible(false)}>
+                <Text style={styles.closeButtonText}>×</Text>
+              </TouchableOpacity>
+            </View>
+
+            <DropDownPicker
+              open={open}
+              value={meetingName}
+              items={categories.map((c) => ({ label: c, value: c }))}
+              setOpen={setOpen}
+              setValue={(callback) => {
+                const value = callback(meetingName);
+                setMeetingName(value);
+              }}
+              setItems={() => {}}
+              style={styles.dropdown}
+              maxHeight={300}
+              listMode="MODAL"
+              zIndex={3000}
+              textStyle={{ textAlign: 'left' }}
+              dropDownContainerStyle={styles.dropdownContainer}
+            />
+
+            <TouchableOpacity
+              style={styles.confirmButton}
+              onPress={() => setMeetingCategoryModalVisible(false)}
+            >
+              <Text style={styles.buttonText}>Confirm Category</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ThemedView>
   )
-  
 }
 
 const styles = StyleSheet.create({
@@ -450,88 +486,71 @@ const styles = StyleSheet.create({
   },
   headerSection: {
     alignItems: "center",
-    paddingHorizontal: 15,
-    marginBottom: 10,
-  },
-  headerImage: {
-    width: 140,
-    height: 140,
-    marginBottom: 10,
+    marginBottom: 20,
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
     textAlign: "center",
-    paddingVertical: 8,
   },
-  subtitle: {
-    fontSize: 14,
-    color: "#666",
-    textAlign: "center",
-  },
-  mainContent: {
-    flex: 1,
-    alignItems: "center",
+  cardContainer: {
     paddingHorizontal: 20,
-    justifyContent: "center",
+    flex: 1,
+    justifyContent: "flex-start",
+  },
+  card: {
+      backgroundColor: "#f9f9f9",
+      padding: 16,
+      borderRadius: 10,
+      marginBottom: 20,
+      shadowColor: "#000",
+      zIndex: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 3,
   },
   label: {
     fontSize: 16,
     color: "#11181C",
-    alignSelf: "flex-start",
-    marginBottom: 5,
+    marginBottom: 10,
   },
   dropdown: {
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#fff",
     borderColor: "#ddd",
     borderRadius: 8,
-    width: "auto",
-    marginBottom: 15,
   },
   dropdownContainer: {
-    width: "100%",
-  },
-  languageSelector: {
-    marginTop: 10,
-    alignItems: "center",
-  },
-  selectedLanguageText: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 8,
-  },
+      width: "100%",
+    },
   langButton: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderWidth: 2,
-    borderColor: PRIMARY_COLOR,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: 12,
+      borderWidth: 2,
+      zIndex: 1,
+    borderColor: "#FF6B00",
     borderRadius: 10,
-    width: 'auto',
   },
   langButtonText: {
     fontSize: 16,
-    fontWeight: "500",
-    color: "#000",
-    marginRight: 10,
+    color: "#11181C",
   },
   button: {
-    marginTop: 30,
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    backgroundColor: PRIMARY_COLOR,
+    backgroundColor: "#FF6B00",
     borderRadius: 10,
+    padding: 14,
     alignItems: "center",
+    marginTop: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
     elevation: 5,
   },
   stopButton: {
-    backgroundColor: "#e53935",
+    backgroundColor: "#FF6B00",
   },
   buttonText: {
     color: "#fff",
@@ -540,16 +559,21 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   timer: {
-    fontSize: 42,
-    padding:20,
-    fontWeight: "bold",
-    marginVertical: 20,
-    textAlign: "center",
-  },
-  countdown: {
-    fontSize: 64,
-    fontWeight: "bold",
-    marginVertical: 20,
+      fontSize: 42,
+      padding: 20,
+      fontWeight: "bold",
+      marginVertical: 20,
+      textAlign: "center",
+    },
+    countdown: {
+      fontSize: 64,
+      fontWeight: "bold",
+      marginVertical: 20,
+      alignSelf: 'center',
+    },
+    recordingNotice: {
+      padding: 10,
+      marginVertical: 20,
   },
   modalOverlay: {
     flex: 1,
@@ -580,7 +604,7 @@ const styles = StyleSheet.create({
     color: "#666",
   },
   confirmButton: {
-    backgroundColor: PRIMARY_COLOR,
+    backgroundColor: "#FF6B00",
     paddingVertical: 12,
     paddingHorizontal: 30,
     borderRadius: 10,
