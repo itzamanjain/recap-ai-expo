@@ -237,7 +237,7 @@ export default function HomeScreen() {
       </View> */}
       <ThemedView style={styles.container}>
       <View style={styles.sectionContainer}>
-        <ThemedText style={styles.sectionTitle}>Recent Meetings Notes</ThemedText>
+        <ThemedText style={styles.sectionTitle}>Recent Meetings</ThemedText>
         
         <ScrollView 
           style={styles.meetingsList}

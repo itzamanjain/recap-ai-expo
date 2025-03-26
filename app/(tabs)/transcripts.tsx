@@ -246,8 +246,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
+    fontSize: 20,
+    fontWeight: "600",
   },
   searchContainer: {
     paddingHorizontal: 20,

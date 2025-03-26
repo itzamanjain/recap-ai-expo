@@ -313,7 +313,7 @@ const [open, setOpen] = useState(false);
       <StatusBar style="light" />
       {/* Header or Title */}
       <View style={styles.headerSection}>
-        <ThemedText style={styles.title}>Start a New Recording</ThemedText>
+        <ThemedText style={styles.title}>Record Your Meeting</ThemedText>
       </View>
   
       {/* Main Content */}
@@ -485,18 +485,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   headerSection: {
-    alignItems: "center",
     marginBottom: 20,
   },
   title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    textAlign: "center",
+    fontSize: 20,
+    fontWeight: "600",
+    textAlign: "left",
+    paddingHorizontal: 20,
   },
   cardContainer: {
     paddingHorizontal: 20,
     flex: 1,
-    justifyContent: "flex-start",
+    justifyContent: "center",
   },
   card: {
       backgroundColor: "#f9f9f9",
@@ -512,6 +512,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
+    marginTop: 10,
     color: "#11181C",
     marginBottom: 10,
   },
