@@ -239,8 +239,9 @@ export default function HomeScreen() {
       <View style={styles.sectionContainer}>
         <ThemedText style={styles.sectionTitle}>Recent Meetings</ThemedText>
         
-        <ScrollView 
+        <ScrollView
           style={styles.meetingsList}
+          showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
