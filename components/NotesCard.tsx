@@ -27,21 +27,21 @@ const formatDuration = (seconds: number) => {
 const TranscriptCard: React.FC<TranscriptCardProps> = ({ meeting, transcribeMeeting, transcribingId }) => {
   // Ensure timestamp is valid
   // console.log("timestamp ",meeting.timestamp);
-  
+
   const meetingDate = new Date(meeting.timestamp);
   const formattedDate = isNaN(meetingDate.getTime())
     ? "Invalid Date"
     : meetingDate.toLocaleString(); // Formats date correctly
 
 
-    const emoji = ["✨", "🪴", "🕧", "🗒️", "📓", "📅", "📝", "📊", "📈", "📆"];
-    const randomEmoji = emoji[Math.floor(Math.random() * emoji.length)];
+  const emoji = ["✨", "🪴", "🕧", "🗒️", "📓", "📅", "📝", "📊", "📈", "📆"];
+  const randomEmoji = emoji[Math.floor(Math.random() * emoji.length)];
 
   return (
     <ThemedView key={meeting.id} style={styles.transcriptCard}>
       {/* Left-side Icon */}
       <View style={styles.iconContainer}>
-          <Text style={styles.iconPlaceholder}>{randomEmoji}</Text>
+        <Text style={styles.iconPlaceholder}>{randomEmoji}</Text>
       </View>
 
       {/* Meeting Details */}
@@ -53,25 +53,31 @@ const TranscriptCard: React.FC<TranscriptCardProps> = ({ meeting, transcribeMeet
         <ThemedText style={styles.transcriptDuration}>
           Duration {formatDuration(meeting.duration)}
         </ThemedText>
-        {meeting.hasTranscript && 
+        {meeting.hasTranscript &&
           <ThemedText style={styles.transcriptAvailable}>Transcript Available</ThemedText>
-}
-          
-        
-      </View>
-      <View>
-      {!meeting.hasTranscript && <TouchableOpacity
-            style={styles.actionButton}
+        }
+        {!meeting.hasTranscript && (
+          <TouchableOpacity
+            style={styles.transcribeButton}
             onPress={() => transcribeMeeting(meeting)}
             disabled={transcribingId === meeting.id}
           >
             {transcribingId === meeting.id ? (
               <ActivityIndicator size="small" color={Colors.text} />
             ) : (
-              <Ionicons name="document-text-outline" size={24} color={Colors.text} />
+              <View style={styles.iconWithText}>
+                <Ionicons name="document-text-outline" size={22} color={Colors.tint} />
+                <Text style={styles.transcribeText}>Transcribe</Text>
+              </View>
             )}
-          </TouchableOpacity>}
+          </TouchableOpacity>
+        )}
+
       </View>
+      <View>
+
+      </View>
+
     </ThemedView>
   );
 };
@@ -87,6 +93,31 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E0E0E0",
   },
+  transcribeButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 14, // better touch area
+    borderRadius: 10,
+    minWidth: 120, // allows flexibility on smaller screens
+    marginTop: 8,
+    borderWidth: 1, // fixed this
+    borderColor: '#FF8C42',
+    backgroundColor: '#FFF5EB',
+    alignItems: 'center', // centers the content
+    flexDirection: 'row', // allows icon + text to align
+    justifyContent: 'center', // centers everything horizontally
+  },
+  
+  iconWithText: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6, // If "gap" is not supported in your version, use marginRight on icon or Text
+  },
+  transcribeText: {
+    fontSize: 14,
+    color: Colors.tint,
+    fontWeight: '500',
+  },
+
   iconContainer: {
     width: 50,
     height: 50,
