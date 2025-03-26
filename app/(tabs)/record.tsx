@@ -29,8 +29,9 @@ export default function RecordScreen() {
   const [recording, setRecording] = useState<Audio.Recording | null>(null)
   const [isRecording, setIsRecording] = useState(false)
   const [recordingTime, setRecordingTime] = useState(0);
-  const [selectedLanguage, setSelectedLanguage] = useState("english (india)")
-  const [open, setOpen] = useState(false);
+const [meetingName, setMeetingName] = useState("Team Sync (Default)");
+const [selectedLanguage, setSelectedLanguage] = useState("english (india)")
+const [open, setOpen] = useState(false);
 
   const [items, setItems] = useState([
     { label: "Bulgarian", value: "bulgarian" },
@@ -86,34 +87,24 @@ export default function RecordScreen() {
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const startTimeRef = useRef<number>(0)
   const countdownAnimation = useRef(new Animated.Value(1)).current
-
+  const categories = [
+    "Team Sync (Default)",
+    "Standup Meeting",
+    "Sales Discussion",
+    "Project Update",
+    "Client Call",
+    "Marketing Meeting",
+    "Product Review",
+    "Sprint Planning",
+    "Design Review",
+    "Strategy Session",
+    "Performance Check-in",
+    "Other",
+  ];
+  
   // Waveform animation setup
-  const BAR_COUNT = 20
-  const bars = Array(BAR_COUNT)
-    .fill(0)
-    .map((_, i) => ({
-      id: i,
-      height: useSharedValue(20),
-    }))
 
   // Update waveform animation periodically when recording
-  useEffect(() => {
-    let animationInterval: NodeJS.Timeout | null = null
-
-    if (isRecording) {
-      animationInterval = setInterval(() => {
-        bars.forEach((bar) => {
-          bar.height.value = 20 + Math.random() * 60
-        })
-      }, 200)
-    }
-
-    return () => {
-      if (animationInterval) {
-        clearInterval(animationInterval)
-      }
-    }
-  }, [isRecording, bars])
 
   // Effect to manage recording timer
   useEffect(() => {
@@ -240,39 +231,41 @@ export default function RecordScreen() {
 
       await recording.stopAndUnloadAsync()
 
-      const uri = recording.getURI()
-      if (!uri) {
-        throw new Error("Failed to get recording URI")
-      }
+      setTimeout(async () => {
+        const uri = recording.getURI()
+        if (!uri) {
+          throw new Error("Failed to get recording URI")
+        }
 
-      const timestamp = new Date()
-      const fileName = `recording-${timestamp.getTime()}.wav`
-      const newUri = `${FileSystem.documentDirectory}${fileName}`
+        const timestamp = new Date()
+        const fileName = `recording-${timestamp.getTime()}.wav`
+        const newUri = `${FileSystem.documentDirectory}${fileName}`
 
-      await FileSystem.moveAsync({
-        from: uri,
-        to: newUri,
-      })
+        await FileSystem.moveAsync({
+          from: uri,
+          to: newUri,
+        })
 
-      const newMeeting: Meeting = {
-        id: timestamp.getTime().toString(),
-        title: `Meeting ${timestamp.toLocaleTimeString()}`,
-        timestamp: formatTimestamp(timestamp),
-        uri: newUri,
-        language: selectedLanguage,
-        duration: recordingTime,
-        hasTranscript: false,
-      }
+        const newMeeting: Meeting = {
+          id: timestamp.getTime().toString(),
+          title: meetingName ? `${meetingName} - ${timestamp.toLocaleTimeString()}` : `Meeting ${timestamp.toLocaleTimeString()}`,
+          timestamp: formatTimestamp(timestamp),
+          uri: newUri,
+          language: selectedLanguage,
+          duration: recordingTime,
+          hasTranscript: false,
+        }
 
-      setRecording(null)
-      setIsRecording(false)
-      setRecordingTime(0)
-      setShowStartButton(true)
+        setRecording(null)
+        setIsRecording(false)
+        setRecordingTime(0)
+        setShowStartButton(true)
 
-      navigation.navigate("(tabs)", {
-        screen: "index",
-        params: { newMeeting },
-      })
+        navigation.navigate("(tabs)", {
+          screen: "index",
+          params: { newMeeting },
+        })
+      }, 100);
     } catch (err) {
       console.error("Failed to stop recording", err)
       alert("Failed to stop recording")
@@ -313,56 +306,59 @@ export default function RecordScreen() {
     }
   }, [recording])
 
-  const animatedBarStyles = bars.map((bar) => {
-    const animatedStyle = useAnimatedStyle(() => {
-      return {
-        height: withSpring(isRecording ? 60 : 20, {
-          damping: 10,
-          stiffness: 80,
-        }),
-        backgroundColor: PRIMARY_COLOR,
-      }
-    })
-    return animatedStyle
-  })
 
   return (
     <ThemedView style={styles.container}>
       <StatusBar style="light" />
-      
-      {/* Header Section */}
+  
+      {/* Header */}
       {/* <View style={styles.headerSection}>
         <Image 
           source={require("../../assets/images/programmer.gif")} 
           style={styles.headerImage} 
         />
-                        <ThemedText style={styles.title}>
-                          {isRecording ? "Recording in Progress" : "Ready to Record"}
-                        </ThemedText>
+        <ThemedText style={styles.title}>
+          {isRecording ? "Recording in Progress" : "Ready to Record"}
+        </ThemedText>
         <ThemedText style={styles.subtitle}>
           Available in Over 20 Languages
         </ThemedText>
       </View>
-       */}
-      {/* Main Content Section */}
-      <View style={styles.recordingContainer}>
+   */}
+      {/* Main Content */}
+      <View style={styles.mainContent}>
         {showStartButton && (
-          <View style={styles.languageSelector}>
-            <ThemedText style={styles.selectedLanguageText}>
-              Select your language:
-            </ThemedText>
-            <TouchableOpacity
-              style={styles.langButton}
-              onPress={() => setLanguageModalVisible(true)}
-            >
-              <Text style={styles.langButtonText}>
-                {items.find(item => item.value === selectedLanguage)?.label}
-              </Text>
-              <ChevronDown width={20} height={20} color="#000000" />
-            </TouchableOpacity>
-          </View>
+          <>
+            <ThemedText style={styles.label}>Meeting Category:</ThemedText>
+            <DropDownPicker
+              open={open}
+              value={meetingName}
+              items={categories.map((c) => ({ label: c, value: c }))}
+              setOpen={setOpen}
+              setValue={setMeetingName}
+              setItems={() => {}}
+              placeholder="Select a category"
+              style={styles.dropdown}
+              dropDownContainerStyle={styles.dropdownContainer}
+            />
+  
+            <View style={styles.languageSelector}>
+              <ThemedText style={styles.selectedLanguageText}>
+                Select your language:
+              </ThemedText>
+              <TouchableOpacity
+                style={styles.langButton}
+                onPress={() => setLanguageModalVisible(true)}
+              >
+                <Text style={styles.langButtonText}>
+                  {items.find(item => item.value === selectedLanguage)?.label}
+                </Text>
+                <ChevronDown width={20} height={20} color="#000" />
+              </TouchableOpacity>
+            </View>
+          </>
         )}
-
+  
         {countdown > 0 ? (
           <Animated.Text
             style={[
@@ -378,30 +374,27 @@ export default function RecordScreen() {
         ) : (
           isRecording && <ThemedText style={styles.timer}>{formatTime(recordingTime)}</ThemedText>
         )}
+        <View>
+        {
+          isRecording && (
+            <Text>
+              We are recording your meeting. Please speak clearly and ensure you are in a quiet environment.
+            </Text>
 
-        {isRecording && (
-          <View style={styles.waveformContainer}>
-            {bars.map((bar, index) => (
-              <Reanimated.View key={bar.id} style={[styles.bar, animatedBarStyles[index]]} />
-            ))}
-          </View>
-        )}
-
-        {showStartButton ? (
-          <TouchableOpacity
-            style={styles.button}
-            onPress={startCountdown}
-          >
-            <Text style={styles.buttonText}>Start Recording</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={[styles.button, styles.stopButton]} onPress={stopRecording}>
-            <Text style={styles.buttonText}>Stop Recording</Text>
-          </TouchableOpacity>
-        )}
+          )
+        }
+        </View>
+        <TouchableOpacity
+          style={[styles.button, !showStartButton && styles.stopButton]}
+          onPress={showStartButton ? startCountdown : stopRecording}
+        >
+          <Text style={styles.buttonText}>
+            {showStartButton ? "Start Recording" : "Stop Recording"}
+          </Text>
+        </TouchableOpacity>
       </View>
-
-      {/* Language Selection Modal */}
+  
+      {/* Language Modal */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -412,35 +405,32 @@ export default function RecordScreen() {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select Language</Text>
-              <TouchableOpacity 
-                style={styles.closeButton}
-                onPress={() => setLanguageModalVisible(false)}
-              >
+              <TouchableOpacity onPress={() => setLanguageModalVisible(false)}>
                 <Text style={styles.closeButtonText}>×</Text>
               </TouchableOpacity>
             </View>
-            <View style={styles.dropdownContainer}>
-              <DropDownPicker
-                open={open}
-                value={selectedLanguage}
-                items={items}
-                setOpen={setOpen}
-                setValue={(callback) => {
-                  const value = callback(selectedLanguage);
-                  setSelectedLanguage(value);
-                }}
-                setItems={setItems}
-                style={styles.dropdown}
-                maxHeight={300}
-                listMode="MODAL"
-                zIndex={3000}
-              />
-            </View>
+  
+            <DropDownPicker
+              open={open}
+              value={selectedLanguage}
+              items={items}
+              setOpen={setOpen}
+              setValue={(callback) => {
+                const value = callback(selectedLanguage);
+                setSelectedLanguage(value);
+              }}
+              setItems={setItems}
+              style={styles.dropdown}
+              maxHeight={300}
+              listMode="MODAL"
+              zIndex={3000}
+              textStyle={{ textAlign: 'left' }}
+              dropDownContainerStyle={styles.dropdownContainer}
+            />
+  
             <TouchableOpacity
               style={styles.confirmButton}
-              onPress={() => {
-                setLanguageModalVisible(false);
-              }}
+              onPress={() => setLanguageModalVisible(false)}
             >
               <Text style={styles.buttonText}>Confirm Language</Text>
             </TouchableOpacity>
@@ -449,203 +439,153 @@ export default function RecordScreen() {
       </Modal>
     </ThemedView>
   )
+  
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "space-between",
     paddingVertical: 20,
+    backgroundColor: "#fff",
   },
   headerSection: {
     alignItems: "center",
-    justifyContent: "center",
     paddingHorizontal: 15,
-    marginTop: 10,
+    marginBottom: 10,
   },
   headerImage: {
     width: 140,
     height: 140,
     marginBottom: 10,
   },
-  recordingContainer: {
-    alignItems: "center",
-    width: "100%",
-    padding: 15,
-    flex: 1,
-    justifyContent: "center",
-  },
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    padding: 10,
     textAlign: "center",
+    paddingVertical: 8,
   },
   subtitle: {
     fontSize: 14,
     color: "#666",
-    marginBottom: 12,
     textAlign: "center",
   },
-  timer: {
-    fontSize: 42,
-    marginTop: 10,
-    paddingVertical: 20, // Add vertical padding
-    paddingHorizontal: 30, // Add horizontal padding
-    fontWeight: "bold",
-    marginVertical: 10,
-    fontVariant: ["tabular-nums"],
-    textAlign: "center", // Center the text
-  },
-  countdown: {
-    fontSize: 64,
-    fontWeight: "bold",
-    marginVertical: 10,
-  },
-  waveformContainer: {
-    flexDirection: "row",
+  mainContent: {
+    flex: 1,
     alignItems: "center",
-    justifyContent: "space-between",
-    height: 80,
-    width: width * 0.8,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-    backgroundColor: "rgba(0, 0, 0, 0.05)",
-    marginVertical: 15,
+    paddingHorizontal: 20,
+    justifyContent: "center",
   },
-  bar: {
-    width: 6,
-    borderRadius: 3,
-    marginHorizontal: 2,
+  label: {
+    fontSize: 16,
+    color: "#11181C",
+    alignSelf: "flex-start",
+    marginBottom: 5,
+  },
+  dropdown: {
+    backgroundColor: "#f9f9f9",
+    borderColor: "#ddd",
+    borderRadius: 8,
+    width: "auto",
+    marginBottom: 15,
+  },
+  dropdownContainer: {
+    width: "100%",
   },
   languageSelector: {
-    width: "100%",
+    marginTop: 10,
     alignItems: "center",
-    marginBottom: 20,
-    padding: 5,
   },
   selectedLanguageText: {
     fontSize: 14,
     color: "#666",
     marginBottom: 8,
-    textAlign: "center",
   },
   langButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 25, // Rounded corners for a modern look
-    borderColor: PRIMARY_COLOR, // Use primary color for border
-    borderWidth: 2, // Slightly thicker border
-    marginTop: 5,
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    width: 220,
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderWidth: 2,
+    borderColor: PRIMARY_COLOR,
+    borderRadius: 10,
+    width: 'auto',
+  },
+  langButtonText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#000",
+    marginRight: 10,
   },
   button: {
+    marginTop: 30,
     paddingVertical: 12,
-    paddingHorizontal: 25,
-    borderRadius: 25, // Rounded corners for a modern look
-    marginTop: 15,
+    paddingHorizontal: 30,
     backgroundColor: PRIMARY_COLOR,
-    minWidth: 180,
+    borderRadius: 10,
     alignItems: "center",
-    shadowColor: "#000", // Add a subtle shadow
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
   },
   stopButton: {
-    backgroundColor: "#e53935", // A darker red for better contrast
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  langButtonText: {
-    color: "#000000",
-    fontSize: 18,
-    fontWeight: "500",
-    marginRight: 10,
+    backgroundColor: "#e53935",
   },
   buttonText: {
-    color: "#ffffff",
-    fontSize: 18,
-    fontWeight: "600", // Slightly lighter font weight
-    textTransform: "uppercase", // Uppercase text for a modern look
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    textTransform: "uppercase",
+  },
+  timer: {
+    fontSize: 42,
+    padding:20,
+    fontWeight: "bold",
+    marginVertical: 20,
+    textAlign: "center",
+  },
+  countdown: {
+    fontSize: 64,
+    fontWeight: "bold",
+    marginVertical: 20,
   },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "flex-end",
-    alignItems: "center",
   },
   modalContent: {
-    backgroundColor: "#f5f5f5", // A light gray background
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     padding: 20,
-    borderRadius: 20, // Consistent rounded corners
-    width: "90%", // Slightly reduced width for better spacing
+    width: "100%",
     alignItems: "center",
-    shadowColor: "#000", // Add a subtle shadow
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-    width: '100%',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginBottom: 10,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#333",
   },
-  closeButton: {
-    padding: 4,
-  },
   closeButtonText: {
     fontSize: 24,
-    color: '#666',
-    fontWeight: "300",
-  },
-  dropdownContainer: {
-    width: '100%',
-    marginBottom: 24,
-  },
-  dropdown: {
-    borderColor: '#ccc',
-    borderRadius: 8,
+    color: "#666",
   },
   confirmButton: {
     backgroundColor: PRIMARY_COLOR,
-    paddingVertical: 15,
+    paddingVertical: 12,
     paddingHorizontal: 30,
     borderRadius: 10,
-    width: '100%',
+    width: "100%",
     alignItems: "center",
-    shadowColor: "#000", // Add a subtle shadow
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    marginTop: 10,
   },
-})
+});
