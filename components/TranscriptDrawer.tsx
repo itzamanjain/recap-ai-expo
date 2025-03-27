@@ -35,6 +35,8 @@ interface Meeting {
   hasTranscript: boolean
   transcript?: string
   summary?: string
+  icon?: string
+  addons?: string
 }
 
 interface TranscriptDrawerProps {
@@ -63,10 +65,12 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
   const [isSummaryLoading, setIsSummaryLoading] = useState(false);
   const [summary, setSummary] = useState(meeting.summary || "");
   const [question, setQuestion] = useState("");
-  const [response, setResponse] = useState("");
   const [chatHistory, setChatHistory] = useState<
     { text: string; isUser: boolean }[]
   >([]);
+  const [notes, setNotes] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [displayNotes, setDisplayNotes] = useState(meeting.addons || "");
   const chatScrollRef = useRef<ScrollView>(null);
 
   const handleSendQuestion = async () => {
@@ -81,11 +85,9 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
         { text: question, isUser: true },
         { text: "Getting your answer...", isUser: false },
       ]);
-      
+
       // Scroll to bottom after adding new messages
-      setTimeout(() => {
-        chatScrollRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+      chatScrollRef.current?.scrollToEnd({ animated: true });
 
       const aiResponse = await askAi(meeting.transcript, question);
 
@@ -98,15 +100,11 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
       });
 
       setQuestion("");
-      setResponse("");
 
       // Scroll to bottom after adding new messages
-      setTimeout(() => {
-        chatScrollRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+      chatScrollRef.current?.scrollToEnd({ animated: true });
     } catch (error) {
       console.error("Failed to get AI response:", error);
-      setResponse("Error getting AI response. Please try again.");
 
       // If there was an error, remove the "Getting your answer..." message
       setChatHistory((prev) => {
@@ -196,6 +194,8 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
       updateMeeting(updatedMeeting);
     } catch (error) {
       console.error("Failed to generate summary:", error);
+      // Display an error message to the user
+      alert("Failed to generate summary. Please try again.");
     } finally {
       setIsSummaryLoading(false);
     }
@@ -204,9 +204,7 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
   // Scroll to bottom when chat history changes
   useEffect(() => {
     if (activeTab === "chat" && chatHistory.length > 0) {
-      setTimeout(() => {
-        chatScrollRef.current?.scrollToEnd({ animated: false });
-      }, 100);
+      chatScrollRef.current?.scrollToEnd({ animated: false });
     }
   }, [chatHistory, activeTab]);
 
@@ -268,10 +266,10 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
           </ThemedText>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === "chat" && styles.activeTab]}
+          style={[styles.tab, activeTab === "addons" && styles.activeTab]}
           onPress={() => setActiveTab("addons")}
         >
-          <ThemedText style={[styles.tabText, activeTab === "chat" && styles.activeTabText]}>
+          <ThemedText style={[styles.tabText, activeTab === "addons" && styles.activeTabText]}>
             Add Ons
           </ThemedText>
         </TouchableOpacity>
@@ -280,8 +278,8 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
       {/* Content Area */}
       <View style={styles.contentWrapper}>
         {activeTab === "transcript" && (
-          <ScrollView 
-            style={styles.contentContainer} 
+          <ScrollView
+            style={styles.contentContainer}
             contentContainerStyle={styles.contentInner}
           >
             <ThemedText style={styles.transcriptText}>
@@ -289,10 +287,10 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
             </ThemedText>
           </ScrollView>
         )}
-        
+
         {activeTab === "summary" && (
-          <ScrollView 
-            style={styles.contentContainer} 
+          <ScrollView
+            style={styles.contentContainer}
             contentContainerStyle={styles.contentInner}
           >
             {summary ? (
@@ -312,13 +310,13 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
             )}
           </ScrollView>
         )}
-        
+
         {activeTab === "chat" && (
-          <KeyboardAvoidingView 
+          <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             style={styles.chatMainContainer}
           >
-            <ScrollView 
+            <ScrollView
               ref={chatScrollRef}
               style={styles.chatHistoryContainer}
               contentContainerStyle={styles.chatHistoryContent}
@@ -342,7 +340,7 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
                 </View>
               ))}
             </ScrollView>
-            
+
             {/* Chat input box - now outside of ScrollView and sticky at bottom */}
             <View style={styles.chatInputContainer}>
               <TextInput
@@ -362,21 +360,59 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
           </KeyboardAvoidingView>
         )}
 
-        {/* user can add some more details regarding meeting text and images etc and we will store it  */}
         {activeTab === "addons" && (
-          <ScrollView 
-            style={styles.contentContainer} 
+          <ScrollView
+            style={styles.contentContainer}
             contentContainerStyle={styles.contentInner}
           >
-            <ThemedText style={styles.transcriptText}>
-              Add ons
+            <ThemedText style={styles.addonsheading}>
+              Extra Notes Here : 
             </ThemedText>
+            {displayNotes ? (
+              <ThemedText style={styles.transcriptText}>
+                {displayNotes}
+              </ThemedText>
+            ) : null}
+           
           </ScrollView>
         )}
       </View>
+       {/* Add Notes input box - now outside of ScrollView and sticky at bottom */}
+       {activeTab === "addons" && (
+        <View style={styles.addNotesContainer}>
+          <TextInput
+            style={styles.addNotesInput}
+            placeholder="Enter your notes"
+            placeholderTextColor={Colors.icon}
+            multiline={true}
+            numberOfLines={4}
+            value={notes}
+            onChangeText={(text) => {
+              setNotes(text);
+            }}
+          />
+          <TouchableOpacity
+            onPress={() => {
+              setIsSaving(true);
+              const newAddons = meeting.addons ? meeting.addons + "\n" + notes : notes;
+              const updatedMeeting = { ...meeting, addons: newAddons };
+              updateMeeting(updatedMeeting);
+              setDisplayNotes(newAddons); // Update displayNotes state
+              setIsSaving(false);
+              setNotes(""); // Clear notes input
+            }}
+            style={styles.addImageButton}
+            disabled={isSaving || !notes}
+          >
+            <Text style={styles.addImageButtonText}>
+              {isSaving ? "Saving..." : "Save"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </Animated.View>
-  )
-}
+  );
+};
 
 // Styles
 const styles = StyleSheet.create({
@@ -404,6 +440,10 @@ const styles = StyleSheet.create({
     height: 32,
     alignItems: "center",
     justifyContent: "center",
+  },
+  addonsheading:{
+      fontSize: 20,
+      fontWeight: '600',
   },
   dragHandle: {
     width: 40,
@@ -518,12 +558,11 @@ const styles = StyleSheet.create({
   chatInputContainer: {
     flexDirection: "row",
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingVertical: 24,
     color:'red',
     position: 'absolute',
     bottom: TAB_BAR_HEIGHT,
-    borderTopWidth: 1,
-    borderTopColor: "#EEEEEE",
+  
     backgroundColor: "#FFFFFF",
   },
   chatInput: {
@@ -570,6 +609,38 @@ const styles = StyleSheet.create({
   chatResponse: {
     fontSize: 16,
     lineHeight: 24,
+  },
+  addNotesInput: {
+    borderWidth: 1,
+    borderColor: Colors.icon,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginTop:40,
+    color: Colors.text,
+    textAlignVertical: 'top',
+  },
+  addImageButton: {
+    backgroundColor: Colors.tint,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    marginTop: 10,
+    alignItems: 'center',
+  },
+  addImageButtonText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  addNotesContainer: {
+    flexDirection: "column",
+    paddingHorizontal: 20,
+    paddingVertical: 28,
+    position: 'absolute',
+    bottom: TAB_BAR_HEIGHT,
+    backgroundColor: "#FFFFFF",
+    left: 0,
+    right: 0,
   },
 });
 
