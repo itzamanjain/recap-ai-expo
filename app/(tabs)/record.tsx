@@ -527,9 +527,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     padding: 12,
-    borderWidth: 2,
+    borderWidth: 1,
     zIndex: 1,
-    borderColor: "#FF6B00",
+    borderColor: "gray",
     borderRadius: 10,
   },
   langButtonText: {
