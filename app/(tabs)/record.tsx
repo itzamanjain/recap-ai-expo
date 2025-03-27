@@ -15,12 +15,6 @@ import { ThemedText } from "../../components/ThemedText"
 import Reanimated from "react-native-reanimated"
 import { ChevronDown } from "react-native-feather" // Import icon for dropdown
 
-// Get screen dimensions
-const { width } = Dimensions.get("window")
-
-// Define tint color constant
-const PRIMARY_COLOR = '#FF6B00';
-const SECONDARY_COLOR = '#3F51B5'; // Example: A deep indigo
 
 export default function RecordScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
@@ -29,9 +23,9 @@ export default function RecordScreen() {
   const [recording, setRecording] = useState<Audio.Recording | null>(null)
   const [isRecording, setIsRecording] = useState(false)
   const [recordingTime, setRecordingTime] = useState(0);
-const [meetingName, setMeetingName] = useState("Team Sync (Default)");
-const [selectedLanguage, setSelectedLanguage] = useState("english (india)")
-const [open, setOpen] = useState(false);
+  const [meetingName, setMeetingName] = useState("Team Sync (Default)");
+  const [selectedLanguage, setSelectedLanguage] = useState("english (india)")
+  const [open, setOpen] = useState(false);
 
   const [items, setItems] = useState([
     { label: "Bulgarian", value: "bulgarian" },
@@ -102,7 +96,7 @@ const [open, setOpen] = useState(false);
     "Performance Check-in",
     "Other",
   ];
-  
+
   // Waveform animation setup
 
   // Update waveform animation periodically when recording
@@ -247,6 +241,9 @@ const [open, setOpen] = useState(false);
           to: newUri,
         })
 
+        const emoji = ["✨", "🪴", "🕧", "🗒️", "📓", "📅", "📝", "📊", "📈", "📆"];
+        const randomEmoji = emoji[Math.floor(Math.random() * emoji.length)];
+
         const newMeeting: Meeting = {
           id: timestamp.getTime().toString(),
           title: meetingName ? `${meetingName} - ${timestamp.toLocaleTimeString()}` : `Meeting ${timestamp.toLocaleTimeString()}`,
@@ -255,6 +252,7 @@ const [open, setOpen] = useState(false);
           language: selectedLanguage,
           duration: recordingTime,
           hasTranscript: false,
+          icon: randomEmoji,
         }
 
         setRecording(null)
@@ -315,41 +313,41 @@ const [open, setOpen] = useState(false);
       <View style={styles.headerSection}>
         <ThemedText style={styles.title}>Record Your Meeting</ThemedText>
       </View>
-  
+
       {/* Main Content */}
       <View style={styles.cardContainer}>
         {showStartButton && (
-                  <>
-                    {/* Language Selector */}
-                    <View style={styles.card}>
-                      <ThemedText style={styles.label}>Select Your Language:</ThemedText>
-                      <TouchableOpacity
-                        style={styles.langButton}
-                        onPress={() => setLanguageModalVisible(true)}
-                      >
-                        <Text style={styles.langButtonText}>
-                          {items.find(item => item.value === selectedLanguage)?.label || "Choose Language"}
-                        </Text>
-                        <ChevronDown width={20} height={20} color="#000" />
-                      </TouchableOpacity>
-                    </View>
+          <>
+            {/* Language Selector */}
+            <View style={styles.card}>
+              <ThemedText style={styles.label}>Select Your Language:</ThemedText>
+              <TouchableOpacity
+                style={styles.langButton}
+                onPress={() => setLanguageModalVisible(true)}
+              >
+                <Text style={styles.langButtonText}>
+                  {items.find(item => item.value === selectedLanguage)?.label || "Choose Language"}
+                </Text>
+                <ChevronDown width={20} height={20} color="#000" />
+              </TouchableOpacity>
+            </View>
 
-                    {/* Meeting Category Selector */}
-                    <View style={styles.card}>
-                      <ThemedText style={styles.label}>Select Meeting Category:</ThemedText>
-                      <TouchableOpacity
-                        style={styles.langButton}
-                        onPress={() => setMeetingCategoryModalVisible(true)}
-                      >
-                        <Text style={styles.langButtonText}>
-                          {categories.find(category => category === meetingName) || "Choose Category"}
-                        </Text>
-                        <ChevronDown width={20} height={20} color="#000" />
-                      </TouchableOpacity>
-                    </View>
-                  </>
-                )}
-  
+            {/* Meeting Category Selector */}
+            <View style={styles.card}>
+              <ThemedText style={styles.label}>Select Meeting Category:</ThemedText>
+              <TouchableOpacity
+                style={styles.langButton}
+                onPress={() => setMeetingCategoryModalVisible(true)}
+              >
+                <Text style={styles.langButtonText}>
+                  {categories.find(category => category === meetingName) || "Choose Category"}
+                </Text>
+                <ChevronDown width={20} height={20} color="#000" />
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+
         {/* Countdown or Timer */}
         {countdown > 0 ? (
           <Animated.Text
@@ -366,7 +364,7 @@ const [open, setOpen] = useState(false);
         ) : (
           isRecording && <ThemedText style={styles.timer}>{formatTime(recordingTime)}</ThemedText>
         )}
-  
+
         {/* Recording Notice */}
         {isRecording && (
           <View style={styles.recordingNotice}>
@@ -375,7 +373,7 @@ const [open, setOpen] = useState(false);
             </Text>
           </View>
         )}
-  
+
         {/* Start/Stop Button */}
         <TouchableOpacity
           style={[styles.button, !showStartButton && styles.stopButton]}
@@ -456,7 +454,7 @@ const [open, setOpen] = useState(false);
                 const value = callback(meetingName);
                 setMeetingName(value);
               }}
-              setItems={() => {}}
+              setItems={() => { }}
               style={styles.dropdown}
               maxHeight={300}
               listMode="MODAL"
@@ -499,12 +497,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   card: {
-      backgroundColor: "#f9f9f9",
-      padding: 16,
-      borderRadius: 10,
-      marginBottom: 20,
-      shadowColor: "#000",
-      zIndex: 2,
+    backgroundColor: "#f9f9f9",
+    padding: 16,
+    borderRadius: 10,
+    marginBottom: 20,
+    shadowColor: "#000",
+    zIndex: 2,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 5,
@@ -522,15 +520,15 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   dropdownContainer: {
-      width: "100%",
-    },
+    width: "100%",
+  },
   langButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      padding: 12,
-      borderWidth: 2,
-      zIndex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 12,
+    borderWidth: 2,
+    zIndex: 1,
     borderColor: "#FF6B00",
     borderRadius: 10,
   },
@@ -560,21 +558,21 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   timer: {
-      fontSize: 42,
-      padding: 20,
-      fontWeight: "bold",
-      marginVertical: 20,
-      textAlign: "center",
-    },
-    countdown: {
-      fontSize: 64,
-      fontWeight: "bold",
-      marginVertical: 20,
-      alignSelf: 'center',
-    },
-    recordingNotice: {
-      padding: 10,
-      marginVertical: 20,
+    fontSize: 42,
+    padding: 20,
+    fontWeight: "bold",
+    marginVertical: 20,
+    textAlign: "center",
+  },
+  countdown: {
+    fontSize: 64,
+    fontWeight: "bold",
+    marginVertical: 20,
+    alignSelf: 'center',
+  },
+  recordingNotice: {
+    padding: 10,
+    marginVertical: 20,
   },
   modalOverlay: {
     flex: 1,

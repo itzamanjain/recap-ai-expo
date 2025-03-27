@@ -68,7 +68,6 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
     { text: string; isUser: boolean }[]
   >([]);
   const chatScrollRef = useRef<ScrollView>(null);
-  const BOTTOM_NAV_HEIGHT = Platform.OS === 'ios' ? 83 : 56;
 
   const handleSendQuestion = async () => {
     if (!meeting.transcript || !question)
@@ -268,6 +267,14 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
             AI Chat
           </ThemedText>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === "chat" && styles.activeTab]}
+          onPress={() => setActiveTab("addons")}
+        >
+          <ThemedText style={[styles.tabText, activeTab === "chat" && styles.activeTabText]}>
+            Add Ons
+          </ThemedText>
+        </TouchableOpacity>
       </View>
 
       {/* Content Area */}
@@ -353,6 +360,18 @@ const TranscriptDetailDrawer: React.FC<TranscriptDrawerProps> = ({
               </TouchableOpacity>
             </View>
           </KeyboardAvoidingView>
+        )}
+
+        {/* user can add some more details regarding meeting text and images etc and we will store it  */}
+        {activeTab === "addons" && (
+          <ScrollView 
+            style={styles.contentContainer} 
+            contentContainerStyle={styles.contentInner}
+          >
+            <ThemedText style={styles.transcriptText}>
+              Add ons
+            </ThemedText>
+          </ScrollView>
         )}
       </View>
     </Animated.View>

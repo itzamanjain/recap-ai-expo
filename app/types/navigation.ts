@@ -17,6 +17,7 @@ export interface Meeting {
   hasTranscript: boolean;
   transcript?: string;
   summary?: string;
+  icon?: string;
 }
 
 export type RootStackParamList = {

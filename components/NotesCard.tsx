@@ -41,7 +41,7 @@ const TranscriptCard: React.FC<TranscriptCardProps> = ({ meeting, transcribeMeet
     <ThemedView key={meeting.id} style={styles.transcriptCard}>
       {/* Left-side Icon */}
       <View style={styles.iconContainer}>
-        <Text style={styles.iconPlaceholder}>{randomEmoji}</Text>
+        {meeting.icon ? <Text style={styles.iconPlaceholder}>{meeting?.icon}</Text> : <Text style={styles.iconPlaceholder}>{randomEmoji}</Text>}
       </View>
 
       {/* Meeting Details */}
