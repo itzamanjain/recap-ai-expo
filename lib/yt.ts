@@ -2,6 +2,9 @@ import { YoutubeTranscript } from 'youtube-transcript';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 function formatTranscript(text: string): string {
+  // Replace HTML entity with apostrophe
+  text = text.replace(/&amp;#39;/g, "'");
+  
   // Split into sentences using punctuation
   let sentences: string[] = text
     .split(/([.?!])\s+/)
@@ -35,7 +38,6 @@ function formatTranscript(text: string): string {
 
   return paragraphs.join('\n\n'); // Double line break between paragraphs
 }
-
 const getYoutubeTranscript = async (videoUrl: string): Promise<string> => {
   try {
     const transcript = await YoutubeTranscript.fetchTranscript(videoUrl);
