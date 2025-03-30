@@ -18,6 +18,7 @@ import {
 import * as Clipboard from 'expo-clipboard' // Changed to expo-clipboard
 import { getTranscriptAndSummary } from "../../lib/yt"
 import YTSummuryDrawer from "../../components/ytsummurydrawer"
+import { Ionicons } from "@expo/vector-icons"
 
 // Define TypeScript interfaces
 interface Summary {
@@ -145,7 +146,7 @@ const YouTubeSummarizer = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <Text style={styles.title}>YouTube Summarizer</Text>
+      <Text style={styles.title}>YouTube Video Summarizer</Text>
       
       {/* Input bar with paste and submit buttons */}
       <View style={styles.inputContainer}>
@@ -157,7 +158,9 @@ const YouTubeSummarizer = () => {
             onChangeText={setYoutubeLink}
           />
           <TouchableOpacity style={styles.pasteButton} onPress={handlePaste}>
-            <Text style={styles.pasteButtonText}>📋</Text>
+            <Text style={styles.pasteButtonText}>
+              <Ionicons name="clipboard-outline" size={24} color="" />
+            </Text>
           </TouchableOpacity>
         </View>
         <TouchableOpacity
