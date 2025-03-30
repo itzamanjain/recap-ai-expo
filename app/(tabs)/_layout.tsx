@@ -49,6 +49,19 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="summurizer"
+        options={{
+          title: 'Summarizer',
+          tabBarIcon: ({ focused }) => (
+            <Ionicons
+              name="bulb-outline"
+              size={28}
+              color={focused ? Colors.tint : Colors.tabIconDefault}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="transcripts"
         options={{
           title: 'Notes',
