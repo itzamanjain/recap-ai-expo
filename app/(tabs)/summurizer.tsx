@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import {
   StyleSheet,
   Text,
@@ -17,15 +17,20 @@ import {
 } from "react-native"
 import * as Clipboard from 'expo-clipboard' // Changed to expo-clipboard
 import { getTranscriptAndSummary } from "../../lib/yt"
+import YTSummuryDrawer from "../../components/ytsummurydrawer"
 
 // Define TypeScript interfaces
 interface Summary {
   id: string;
   title: string;
   thumbnail: string;
-  duration: string;
+  duration: number;
   summary: string;
   transcript: string;
+  timestamp: string;
+  uri: string;
+  hasTranscript: boolean;
+  addons?: string;
 }
 
 interface TabProps {
@@ -69,9 +74,8 @@ const YouTubeSummarizer = () => {
   const [youtubeLink, setYoutubeLink] = useState("")
   const [summaries, setSummaries] = useState<Summary[]>([])
   const [loading, setLoading] = useState(false)
-  const [modalVisible, setModalVisible] = useState(false)
+  const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [selectedSummary, setSelectedSummary] = useState<Summary | null>(null)
-  const [activeTab, setActiveTab] = useState("summary")
 
   // Handle paste from clipboard
   const handlePaste = async () => {
@@ -110,9 +114,12 @@ const YouTubeSummarizer = () => {
         id: Date.now().toString(),
         title: title || "YouTube Video",
         thumbnail: thumbnail || "https://via.placeholder.com/320x180",
-        duration: duration || "0:00",
+        duration: parseInt(duration || "0"),
         summary: summary || "No summary available",
         transcript: transcript || "No transcript available",
+        timestamp: new Date().toISOString(),
+        uri: youtubeLink,
+        hasTranscript: !!transcript,
       }
 
       // Add to the list of summaries
@@ -126,11 +133,14 @@ const YouTubeSummarizer = () => {
     }
   }
 
-  // Open modal with selected summary
-  const openModal = (item: Summary) => {
-    setSelectedSummary(item)
-    setModalVisible(true)
-  }
+  const handleViewDetails = useCallback((item: Summary) => {
+    setSelectedSummary(item);
+    setIsDrawerVisible(true);
+  }, []);
+
+  const handleCloseDrawer = useCallback(() => {
+    setIsDrawerVisible(false);
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -167,50 +177,22 @@ const YouTubeSummarizer = () => {
       <FlatList
         data={summaries}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <SummaryCard item={item} onPress={() => openModal(item)} />}
+        renderItem={({ item }) => <SummaryCard item={item} onPress={() => handleViewDetails(item)} />}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={<Text style={styles.emptyText}>No summaries yet. Enter a YouTube URL to get started.</Text>}
       />
-
-      {/* Detail Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle} numberOfLines={2}>
-                {selectedSummary?.title}
-              </Text>
-              <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                <Text style={styles.closeButtonText}>✕</Text>
-              </TouchableOpacity>
-            </View>
-            
-            {/* Tabs */}
-            <View style={styles.tabContainer}>
-              <Tab title="Summary" active={activeTab === "summary"} onPress={() => setActiveTab("summary")} />
-              <Tab title="Transcript" active={activeTab === "transcript"} onPress={() => setActiveTab("transcript")} />
-            </View>
-            
-            {/* Tab content */}
-            <ScrollView style={styles.modalBody}>
-              {activeTab === "summary" ? (
-                <Text style={styles.modalText}>{selectedSummary?.summary}</Text>
-              ) : (
-                <Text style={styles.modalText}>{selectedSummary?.transcript}</Text>
-              )}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+      {selectedSummary && (
+        <YTSummuryDrawer
+          meeting={selectedSummary}
+          isVisible={isDrawerVisible}
+          onClose={handleCloseDrawer}
+          updateMeeting={() => {}}
+        />
+      )}
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const { width } = Dimensions.get("window")
 
