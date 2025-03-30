@@ -72,9 +72,11 @@ const getSummaryForYtVideo = async (transcript: string): Promise<string> => {
   console.log("Processing summary with Gemini...");
 
   // Create the system prompt for structured summary generation
-  const systemPrompt = `You are a Best Summarizer AI that extracts key insights from discussions.
-Your task is to analyze the transcript and generate a structured summary in 2-3 paragraphs.`;
-
+  const systemPrompt = `You are a smart AI that summarizes YouTube video transcripts.
+  Your job is to read the full transcript and write a clear, pointwise summary.
+  Only include the most important and useful points. Skip any extra or unimportant details.
+  The summary should be easy to read and give a quick idea of what the video is about.`;
+  
   try {
     // Get the Gemini model
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });

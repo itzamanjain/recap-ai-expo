@@ -26,17 +26,16 @@ import { Colors } from "../constants/Colors"
 
 // Types
 interface Meeting {
-  id: string
-  title: string
-  timestamp: string
-  uri: string  // Updated to match the interface
-  duration: number
-  language?: string
-  hasTranscript: boolean
-  transcript?: string
-  summary?: string
-  icon?: string
-  addons?: string
+  id: string;
+  title: string;
+  thumbnail: string;
+  duration: number;
+  summary: string;
+  transcript: string;
+  timestamp: string;
+  uri: string;
+  hasTranscript: boolean;
+  addons?: string;
 }
 
 interface TranscriptDrawerProps {
@@ -293,21 +292,9 @@ const YTSummuryDrawer: React.FC<TranscriptDrawerProps> = ({
             style={styles.contentContainer}
             contentContainerStyle={styles.contentInner}
           >
-            {summary ? (
               <ThemedText style={styles.summaryText}>
-                {summary}
+                {meeting.summary}
               </ThemedText>
-            ) : (
-              <TouchableOpacity
-                style={styles.generateButton}
-                onPress={generateSummary}
-                disabled={isSummaryLoading}
-              >
-                <ThemedText style={styles.generateButtonText}>
-                  {isSummaryLoading ? "Generating..." : "Generate Summary"}
-                </ThemedText>
-              </TouchableOpacity>
-            )}
           </ScrollView>
         )}
 
