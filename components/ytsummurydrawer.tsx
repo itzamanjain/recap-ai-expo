@@ -70,6 +70,9 @@ const YTSummuryDrawer: React.FC<TranscriptDrawerProps> = ({
   const [notes, setNotes] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [displayNotes, setDisplayNotes] = useState(meeting.addons || "");
+  useEffect(() => {
+    console.log("YTSummuryDrawer rendered with meeting.addons:", meeting.addons);
+  }, [meeting.addons]);
   const chatScrollRef = useRef<ScrollView>(null);
 
   const handleSendQuestion = async () => {
@@ -180,25 +183,6 @@ const YTSummuryDrawer: React.FC<TranscriptDrawerProps> = ({
     })
   ).current
 
-  // Function to generate summary
-  const generateSummary = async () => {
-    if (!meeting.transcript) {
-      return;
-    }
-    setIsSummaryLoading(true);
-    try {
-      const generatedSummary = await getSummary(meeting.transcript);
-      setSummary(generatedSummary);
-      const updatedMeeting = { ...meeting, summary: generatedSummary };
-      updateMeeting(updatedMeeting);
-    } catch (error) {
-      console.error("Failed to generate summary:", error);
-      // Display an error message to the user
-      alert("Failed to generate summary. Please try again.");
-    } finally {
-      setIsSummaryLoading(false);
-    }
-  };
 
   // Scroll to bottom when chat history changes
   useEffect(() => {
@@ -256,20 +240,20 @@ const YTSummuryDrawer: React.FC<TranscriptDrawerProps> = ({
             Summary
           </ThemedText>
         </TouchableOpacity>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={[styles.tab, activeTab === "chat" && styles.activeTab]}
           onPress={() => setActiveTab("chat")}
         >
           <ThemedText style={[styles.tabText, activeTab === "chat" && styles.activeTabText]}>
             AI Chat
           </ThemedText>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <TouchableOpacity
           style={[styles.tab, activeTab === "addons" && styles.activeTab]}
           onPress={() => setActiveTab("addons")}
         >
           <ThemedText style={[styles.tabText, activeTab === "addons" && styles.activeTabText]}>
-            Add Ons
+            Notes
           </ThemedText>
         </TouchableOpacity>
       </View>
@@ -280,7 +264,17 @@ const YTSummuryDrawer: React.FC<TranscriptDrawerProps> = ({
           <ScrollView
             style={styles.contentContainer}
             contentContainerStyle={styles.contentInner}
-          >
+          > 
+            <ThemedText style={
+                {
+                  fontSize: 20,
+                  fontWeight: '600',
+                  marginBottom: 10,
+                  color: Colors.text,
+                }
+              }>
+                Transcript of the video is:
+              </ThemedText>
             <ThemedText style={styles.transcriptText}>
               {meeting.transcript || "Transcript not available"}
             </ThemedText>
@@ -292,13 +286,23 @@ const YTSummuryDrawer: React.FC<TranscriptDrawerProps> = ({
             style={styles.contentContainer}
             contentContainerStyle={styles.contentInner}
           >
+              <ThemedText style={
+                {
+                  fontSize: 20,
+                  fontWeight: '600',
+                  marginBottom: 10,
+                  color: Colors.text,
+                }
+              }>
+                Summury of the video is :
+              </ThemedText>
               <ThemedText style={styles.summaryText}>
                 {meeting.summary}
               </ThemedText>
           </ScrollView>
         )}
 
-        {activeTab === "chat" && (
+        {/* {activeTab === "chat" && (
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             style={styles.chatMainContainer}
@@ -329,7 +333,7 @@ const YTSummuryDrawer: React.FC<TranscriptDrawerProps> = ({
             </ScrollView>
 
             {/* Chat input box - now outside of ScrollView and sticky at bottom */}
-            <View style={styles.chatInputContainer}>
+            {/* <View style={styles.chatInputContainer}>
               <TextInput
                 style={styles.chatInput}
                 placeholder="Ask a question about the transcript"
@@ -345,7 +349,7 @@ const YTSummuryDrawer: React.FC<TranscriptDrawerProps> = ({
               </TouchableOpacity>
             </View>
           </KeyboardAvoidingView>
-        )}
+        )} */} 
 
         {activeTab === "addons" && (
           <ScrollView
@@ -355,9 +359,9 @@ const YTSummuryDrawer: React.FC<TranscriptDrawerProps> = ({
             <ThemedText style={styles.addonsheading}>
               Extra Notes Here : 
             </ThemedText>
-            {displayNotes ? (
+            {meeting.addons ? (
               <ThemedText style={styles.transcriptText}>
-                {displayNotes}
+                {meeting.addons}
               </ThemedText>
             ) : null}
            
@@ -375,18 +379,24 @@ const YTSummuryDrawer: React.FC<TranscriptDrawerProps> = ({
             numberOfLines={4}
             value={notes}
             onChangeText={(text) => {
+              console.log("Before setNotes, notes:", notes);
               setNotes(text);
+              console.log("After setNotes, notes:", notes);
             }}
           />
           <TouchableOpacity
             onPress={() => {
               setIsSaving(true);
+              console.log("Before updateMeeting, meeting.addons:", meeting.addons, "notes:", notes);
               const newAddons = meeting.addons ? meeting.addons + "\n" + notes : notes;
+              console.log("newAddons:", newAddons);
               const updatedMeeting = { ...meeting, addons: newAddons };
               updateMeeting(updatedMeeting);
-              setDisplayNotes(newAddons); // Update displayNotes state
+              console.log("After updateMeeting, meeting.addons:", meeting.addons);
+              setDisplayNotes(newAddons);
+              console.log("displayNotes:", displayNotes);
               setIsSaving(false);
-              setNotes(""); // Clear notes input
+              setNotes("");
             }}
             style={styles.addImageButton}
             disabled={isSaving || !notes}

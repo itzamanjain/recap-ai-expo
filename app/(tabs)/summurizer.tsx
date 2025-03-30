@@ -109,7 +109,6 @@ const YouTubeSummarizer = () => {
         thumbnail?: string;
         duration?: string;
       }
-
       // Create a new summary object
       const newSummary: Summary = {
         id: Date.now().toString(),
@@ -142,6 +141,13 @@ const YouTubeSummarizer = () => {
   const handleCloseDrawer = useCallback(() => {
     setIsDrawerVisible(false);
   }, []);
+
+  const handleUpdateMeeting = useCallback((updatedMeeting: Summary) => {
+    setSummaries(summaries.map(summary =>
+      summary.id === updatedMeeting.id ? updatedMeeting : summary
+    ));
+    setSelectedSummary(updatedMeeting);
+  }, [summaries, setSummaries]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -190,7 +196,7 @@ const YouTubeSummarizer = () => {
           meeting={selectedSummary}
           isVisible={isDrawerVisible}
           onClose={handleCloseDrawer}
-          updateMeeting={() => {}}
+          updateMeeting={handleUpdateMeeting}
         />
       )}
     </SafeAreaView>

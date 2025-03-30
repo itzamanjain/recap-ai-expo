@@ -2,42 +2,54 @@ import { YoutubeTranscript } from 'youtube-transcript';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 function formatTranscript(text: string): string {
-  // Replace HTML entity with apostrophe
+  // Replace HTML entities with proper characters
   text = text.replace(/&amp;#39;/g, "'");
-  
-  // Split into sentences using punctuation
+
+  // Split into sentences
   let sentences: string[] = text
     .split(/([.?!])\s+/)
     .reduce<string[]>((acc, val, i, arr) => {
       if (i % 2 === 0) {
-        const nextPunctuation = arr[i + 1] || '';
-        const sentence = val + nextPunctuation;
-        if (sentence.trim()) {  // Only add non-empty sentences
-          acc.push(sentence.trim());
-        }
+        const punctuation = arr[i + 1] || '';
+        const sentence = (val + punctuation).trim();
+        if (sentence) acc.push(sentence);
       }
       return acc;
     }, []);
 
-  // Capitalize the first letter of each sentence
-  sentences = sentences.map(sentence => {
-    if (sentence.length > 0) {
-      return sentence.charAt(0).toUpperCase() + sentence.slice(1);
-    }
-    return sentence;
-  });
+  // Capitalize each sentence
+  sentences = sentences.map(sentence =>
+    sentence.charAt(0).toUpperCase() + sentence.slice(1)
+  );
 
-  // Group every 4 sentences into a paragraph
-  const paragraphs: string[] = [];
-  for (let i = 0; i < sentences.length; i += 4) {
-    const paragraph = sentences.slice(i, i + 4).join(' ');
-    if (paragraph.trim()) {  // Only add non-empty paragraphs
-      paragraphs.push(paragraph);
+  // Group sentences into bullet points with ~40–60 words each
+  const points: string[] = [];
+  let currentPoint: string[] = [];
+  let currentWordCount = 0;
+
+  for (const sentence of sentences) {
+    const wordCount = sentence.split(/\s+/).length;
+    currentWordCount += wordCount;
+    currentPoint.push(sentence);
+
+    if (currentWordCount >= 50) {
+      points.push(`• ${currentPoint.join(' ')}`);
+      currentPoint = [];
+      currentWordCount = 0;
     }
   }
 
-  return paragraphs.join('\n\n'); // Double line break between paragraphs
+  // Add remaining sentences
+  if (currentPoint.length > 0) {
+    points.push(`• ${currentPoint.join(' ')}`);
+  }
+
+  // Join points with clear spacing
+  return points.join('\n\n');
 }
+
+
+
 const getYoutubeTranscript = async (videoUrl: string): Promise<string> => {
   try {
     const transcript = await YoutubeTranscript.fetchTranscript(videoUrl);
@@ -49,7 +61,7 @@ const getYoutubeTranscript = async (videoUrl: string): Promise<string> => {
       .join(' ');
 
     // Format the transcript nicely
-    const formattedText = formatTranscript(rawText);
+    const formattedText = formatTranscript(rawText, true); // Use bullets for formatting
 
     return formattedText;
   } catch (error) {
@@ -71,11 +83,24 @@ const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 const getSummaryForYtVideo = async (transcript: string): Promise<string> => {
   console.log("Processing summary with Gemini...");
 
-  // Create the system prompt for structured summary generation
   const systemPrompt = `You are a smart AI that summarizes YouTube video transcripts.
-  Your job is to read the full transcript and write a clear, pointwise summary.
-  Only include the most important and useful points. Skip any extra or unimportant details.
-  The summary should be easy to read and give a quick idea of what the video is about.`;
+
+  Your task is to read the full transcript and write a clear, structured summary.
+  
+  Follow these rules:
+  - Only include the most important and useful points.
+  - Skip any extra, repetitive, or unimportant details.
+  - Write the summary in a pointwise format.
+  - Use bullet points or numbered lists where needed.
+  - Use clear and simple language. Avoid jargon unless necessary.
+  - Be concise and to the point.
+  - Avoid personal opinions or subjective statements.
+  - Do not repeat the same idea in different ways.
+  - Add proper spacing between points to improve readability.
+  - Do not use HTML tags or unnecessary formatting.
+  
+  The goal is to make the summary easy to read and give a quick understanding of what the video is about.`;
+  
   
   try {
     // Get the Gemini model
