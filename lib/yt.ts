@@ -61,7 +61,7 @@ const getYoutubeTranscript = async (videoUrl: string): Promise<string> => {
       .join(' ');
 
     // Format the transcript nicely
-    const formattedText = formatTranscript(rawText, true); // Use bullets for formatting
+    const formattedText = formatTranscript(rawText); // Use bullets for formatting
 
     return formattedText;
   } catch (error) {
