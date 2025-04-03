@@ -1,11 +1,3 @@
-## todo
-- new design 
-- spotify player view to listen recording and do other stuff
-- see all the info time,name,duration,language etc all the things
-- add auth 
-- add payement 
-- add live sync with web 
-- change the model view to more applealing user can listen and read transcrpti and search in transcrrpit 
 
 
 # Welcome to your Expo app 👋
